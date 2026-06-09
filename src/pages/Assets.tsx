@@ -1,352 +1,270 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Monitor, Plus, Search, X, Copy, CheckCircle, Server, Wifi, Cloud, Cpu } from "lucide-react";
-import { Layout } from "../components/Layout";
-import { assets, AssetType, AssetStatus } from "../data/mockData";
-import { format } from "date-fns";
+import { useState } from 'react';
+import { Server, Monitor, Network, Plus, X, Check, Copy } from 'lucide-react';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import { assets } from '../data';
 
-const statusConfig: Record<AssetStatus, { label: string; color: string; dot: string }> = {
-  online: { label: "Online", color: "text-emerald-400", dot: "bg-emerald-400" },
-  offline: { label: "Offline", color: "text-slate-500", dot: "bg-slate-600" },
-  quarantined: { label: "Quarantined", color: "text-red-400", dot: "bg-red-400" },
-  degraded: { label: "Degraded", color: "text-orange-400", dot: "bg-orange-400" },
+const osColors: Record<string, string> = {
+  Windows: '#38bdf8', Linux: '#10b981', macOS: '#a78bfa', 'Network OS': '#f97316', Android: '#eab308', iOS: '#f472b6',
 };
 
-const typeIcon: Record<AssetType, React.ReactNode> = {
-  server: <Server size={14} />,
-  workstation: <Monitor size={14} />,
-  network: <Wifi size={14} />,
-  cloud: <Cloud size={14} />,
-  iot: <Cpu size={14} />,
-  mobile: <Monitor size={14} />,
+const typeIcons: Record<string, any> = {
+  workstation: Monitor, server: Server, network: Network, mobile: Monitor, cloud: Server,
 };
 
 const riskColor = (score: number) => {
-  if (score >= 90) return "text-red-400 bg-red-400/10";
-  if (score >= 70) return "text-orange-400 bg-orange-400/10";
-  if (score >= 50) return "text-yellow-400 bg-yellow-400/10";
-  return "text-emerald-400 bg-emerald-400/10";
+  if (score >= 80) return '#ef4444';
+  if (score >= 60) return '#f97316';
+  if (score >= 40) return '#eab308';
+  return '#10b981';
 };
 
-const riskBarColor = (score: number) => {
-  if (score >= 90) return "bg-red-400";
-  if (score >= 70) return "bg-orange-400";
-  if (score >= 50) return "bg-yellow-400";
-  return "bg-emerald-400";
+const installScripts: Record<string, (hostname: string) => string> = {
+  Windows: (h) => `# Sentinel Agent Install — Windows PowerShell\n# Run as Administrator\n\n$AgentUrl = "https://packages.sentinel.io/windows/sentinel-agent-4.7.2.msi"\n$ApiKey = "sk-sentinel-XXXX-YYYY-ZZZZ-DEMO"\n$ServerUrl = "https://siem.corp.local:55000"\n$Hostname = "${h}"\n\nWrite-Host "[*] Downloading Sentinel Agent..." -ForegroundColor Cyan\nInvoke-WebRequest -Uri $AgentUrl -OutFile "$env:TEMP\\sentinel-agent.msi"\n\nWrite-Host "[*] Installing agent..." -ForegroundColor Cyan\nmsiexec /i "$env:TEMP\\sentinel-agent.msi" /quiet \`\n  SENTINEL_SERVER="$ServerUrl" \`\n  SENTINEL_KEY="$ApiKey" \`\n  SENTINEL_AGENT_NAME="$Hostname"\n\nWrite-Host "[+] Starting Sentinel service..." -ForegroundColor Green\nStart-Service SentinelAgent\nSet-Service SentinelAgent -StartupType Automatic\n\nWrite-Host "[✓] Agent enrolled successfully!" -ForegroundColor Green`,
+
+  Linux: (h) => `#!/bin/bash\n# Sentinel Agent Install — Linux\n# Run as root\n\nAPI_KEY="sk-sentinel-XXXX-YYYY-ZZZZ-DEMO"\nSERVER_URL="https://siem.corp.local:55000"\nHOSTNAME_OVERRIDE="${h}"\n\necho "[*] Detecting OS..."\nif command -v apt &>/dev/null; then\n  PKG_MGR="apt"\nelif command -v yum &>/dev/null; then\n  PKG_MGR="yum"\nfi\n\necho "[*] Adding Sentinel repository..."\ncurl -s https://packages.sentinel.io/GPG-KEY | apt-key add -\necho "deb https://packages.sentinel.io/apt stable main" >> /etc/apt/sources.list\n$PKG_MGR update -y\n$PKG_MGR install -y sentinel-agent\n\necho "[*] Configuring agent..."\ncat > /etc/sentinel/agent.conf << EOF\nserver: $SERVER_URL\nkey: $API_KEY\nhostname: $HOSTNAME_OVERRIDE\nEOF\n\nsystemctl enable sentinel-agent && systemctl start sentinel-agent\necho "[✓] Agent enrolled: $HOSTNAME_OVERRIDE"`,
+
+  macOS: (h) => `#!/bin/bash\n# Sentinel Agent Install — macOS\n# Run with sudo\n\nAPI_KEY="sk-sentinel-XXXX-YYYY-ZZZZ-DEMO"\nSERVER_URL="https://siem.corp.local:55000"\nHOSTNAME_OVERRIDE="${h}"\n\necho "[*] Downloading Sentinel Agent for macOS..."\ncurl -o /tmp/sentinel-agent.pkg \\\n  "https://packages.sentinel.io/macos/sentinel-agent-4.7.2.pkg"\n\necho "[*] Installing package..."\ninstaller -pkg /tmp/sentinel-agent.pkg -target /\n\necho "[*] Writing configuration..."\nmkdir -p /Library/Application\\ Support/Sentinel\ncat > /Library/Application\\ Support/Sentinel/agent.conf << EOF\nserver: $SERVER_URL\nkey: $API_KEY\nhostname: $HOSTNAME_OVERRIDE\nEOF\n\nlaunchctl load /Library/LaunchDaemons/io.sentinel.agent.plist\necho "[✓] Sentinel agent running on $HOSTNAME_OVERRIDE"`,
 };
 
-const INSTALL_SCRIPTS: Record<string, string> = {
-  windows: `# Sentinel Agent Installation (Windows)
-# Run as Administrator in PowerShell
-
-$AgentUrl = "https://packages.sentinel.io/windows/sentinel-agent-4.7.2.msi"
-$AgentKey = "AGENT-KEY-XXXX-YYYY-ZZZZ"
-
-Write-Host "Downloading Sentinel Agent v4.7.2..." -ForegroundColor Cyan
-Invoke-WebRequest -Uri $AgentUrl -OutFile "sentinel-agent.msi"
-
-Write-Host "Installing Sentinel Agent..." -ForegroundColor Cyan
-Start-Process msiexec.exe -Wait -ArgumentList @(
-  '/i', 'sentinel-agent.msi', '/quiet',
-  "SENTINEL_SERVER=https://siem.company.com",
-  "SENTINEL_KEY=$AgentKey",
-  "ENROLLMENT_GROUP=windows-endpoints"
-)
-
-Write-Host "Starting Sentinel service..." -ForegroundColor Cyan
-Start-Service SentinelAgent
-Set-Service SentinelAgent -StartupType Automatic
-
-Write-Host "✓ Sentinel Agent installed and running!" -ForegroundColor Green`,
-
-  linux: `#!/bin/bash
-# Sentinel Agent Installation (Linux/Ubuntu/Debian/RHEL)
-# Run as root or with sudo
-
-set -e
-
-AGENT_VERSION="4.7.2"
-SENTINEL_SERVER="https://siem.company.com"
-AGENT_KEY="AGENT-KEY-XXXX-YYYY-ZZZZ"
-ENROLLMENT_GROUP="linux-servers"
-
-echo "→ Detecting OS..."
-if [ -f /etc/debian_version ]; then
-    curl -sSL https://packages.sentinel.io/gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sentinel.gpg
-    echo "deb https://packages.sentinel.io/apt stable main" > /etc/apt/sources.list.d/sentinel.list
-    apt-get update -qq && apt-get install -y sentinel-agent
-elif [ -f /etc/redhat-release ]; then
-    rpm --import https://packages.sentinel.io/gpg
-    cat > /etc/yum.repos.d/sentinel.repo << EOF
-[sentinel]
-name=Sentinel Agent Repository
-baseurl=https://packages.sentinel.io/yum
-enabled=1
-gpgcheck=1
-EOF
-    yum install -y sentinel-agent
-fi
-
-echo "→ Configuring agent..."
-cat > /etc/sentinel/agent.conf << EOF
-server: $SENTINEL_SERVER
-api_key: $AGENT_KEY
-enrollment_group: $ENROLLMENT_GROUP
-log_level: info
-fim:
-  enabled: true
-  monitored_paths:
-    - /etc/passwd
-    - /etc/shadow
-    - /etc/sudoers
-    - /usr/bin
-rootkit_detection: true
-vuln_scanning: true
-EOF
-
-systemctl enable --now sentinel-agent
-echo "✓ Sentinel Agent v$AGENT_VERSION installed!"`,
-
-  macos: `#!/bin/bash
-# Sentinel Agent Installation (macOS)
-# Requires macOS 12.0 Monterey or later
-
-SENTINEL_SERVER="https://siem.company.com"
-AGENT_KEY="AGENT-KEY-XXXX-YYYY-ZZZZ"
-
-echo "-> Downloading Sentinel Agent v4.7.2 for macOS..."
-curl -sSL "https://packages.sentinel.io/macos/SentinelAgent-4.7.2.pkg" -o /tmp/SentinelAgent.pkg
-
-echo "→ Installing package (requires admin)..."
-sudo installer -pkg /tmp/SentinelAgent.pkg -target /
-
-echo "→ Configuring agent..."
-sudo tee /Library/Application\ Support/Sentinel/agent.conf > /dev/null << EOF
-server: $SENTINEL_SERVER
-api_key: $AGENT_KEY
-enrollment_group: macos-endpoints
-fim:
-  enabled: true
-  monitored_paths:
-    - /etc/hosts
-    - /private/etc/sudoers
-    - /usr/local/bin
-EOF
-
-echo "→ Loading LaunchDaemon..."
-sudo launchctl load -w /Library/LaunchDaemons/io.sentinel.agent.plist
-
-echo "✓ Sentinel Agent v4.7.2 installed on macOS!"`,
-};
-
-export const Assets: React.FC = () => {
-  const [search, setSearch] = useState("");
+export default function Assets() {
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
-  const [selectedOS, setSelectedOS] = useState<"windows" | "linux" | "macos">("linux");
+  const [wizardOS, setWizardOS] = useState('Windows');
+  const [wizardHost, setWizardHost] = useState('new-endpoint-01');
   const [copied, setCopied] = useState(false);
 
-  const filtered = assets.filter(a =>
-    !search ||
-    a.hostname.toLowerCase().includes(search.toLowerCase()) ||
-    a.ip.includes(search) ||
-    a.os.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = assets.filter(a => {
+    if (search && !a.hostname.toLowerCase().includes(search.toLowerCase()) && !a.ip.includes(search) && !a.department.toLowerCase().includes(search.toLowerCase())) return false;
+    if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+    return true;
+  });
 
-  const copyScript = () => {
-    navigator.clipboard.writeText(INSTALL_SCRIPTS[selectedOS]);
+  const handleCopy = () => {
+    const script = installScripts[wizardOS]?.(wizardHost) || '';
+    navigator.clipboard.writeText(script).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const statusColor: Record<string, string> = { online: '#10b981', offline: '#6b7280', warning: '#f97316' };
+
   return (
-    <Layout title="Asset Inventory" subtitle={`${assets.length} assets monitored · ${assets.filter(a=>a.status==="online").length} online`}>
-      {/* Controls */}
-      <div className="flex gap-3 mb-5">
-        <div className="flex-1 relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search hostname, IP, OS..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-sm text-slate-300 placeholder-slate-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
-            style={{ background: "hsl(222,35%,11%)", border: "1px solid hsl(222,25%,18%)" }}
-          />
+    <div className="p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Asset Inventory</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
+            {assets.filter(a => a.status === 'online').length} online · {assets.filter(a => a.status === 'warning').length} warning · {assets.filter(a => a.status === 'offline').length} offline
+          </p>
         </div>
         <button
-          onClick={() => setShowWizard(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-emerald-400 border border-emerald-400/30 hover:bg-emerald-400/10 transition-colors"
+          onClick={() => { setShowWizard(true); setWizardStep(1); }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
+          style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}
         >
-          <Plus size={15} />
-          Add Endpoint
+          <Plus size={16} /> Add Endpoint
         </button>
       </div>
 
-      {/* Assets Table */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-        <div className="grid grid-cols-12 gap-2 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-slate-600 border-b" style={{ borderColor: "hsl(222,25%,16%)" }}>
-          <div className="col-span-1">Status</div>
-          <div className="col-span-2">Hostname</div>
-          <div className="col-span-2">IP Address</div>
-          <div className="col-span-2">OS</div>
-          <div className="col-span-1">Type</div>
-          <div className="col-span-2">Risk Score</div>
-          <div className="col-span-1">Agent</div>
-          <div className="col-span-1">Last Seen</div>
-        </div>
-
-        <div className="divide-y divide-white/3">
-          {filtered.map((asset, i) => {
-            const sc = statusConfig[asset.status];
-            return (
-              <motion.div
-                key={asset.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.03 }}
-                className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-white/2 transition-colors items-center"
-              >
-                <div className="col-span-1 flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${sc.dot} ${asset.status === "online" ? "animate-pulse" : ""}`} />
-                  <span className={`text-[10px] font-mono ${sc.color}`}>{sc.label}</span>
-                </div>
-                <div className="col-span-2 font-mono text-xs text-slate-200 truncate">{asset.hostname}</div>
-                <div className="col-span-2 font-mono text-xs text-slate-400">{asset.ip}</div>
-                <div className="col-span-2 text-xs text-slate-400 truncate">{asset.os}</div>
-                <div className="col-span-1">
-                  <span className="flex items-center gap-1 text-[10px] text-slate-500">
-                    {typeIcon[asset.type]}
-                    <span className="capitalize">{asset.type}</span>
-                  </span>
-                </div>
-                <div className="col-span-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-white/5">
-                      <div
-                        className={`h-full rounded-full ${riskBarColor(asset.riskScore)}`}
-                        style={{ width: `${asset.riskScore}%` }}
-                      />
-                    </div>
-                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${riskColor(asset.riskScore)}`}>
-                      {asset.riskScore}
-                    </span>
-                  </div>
-                </div>
-                <div className="col-span-1 font-mono text-[10px] text-slate-600">{asset.agentVersion}</div>
-                <div className="col-span-1 text-[10px] text-slate-600 font-mono">
-                  {format(asset.lastSeen, "HH:mm")}
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+      {/* Filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search hostname, IP, department..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="px-3 py-2 rounded-lg text-sm outline-none flex-1 min-w-48"
+          style={{ background: 'hsl(222,33%,14%)', border: '1px solid hsl(222,22%,20%)', color: '#f1f5f9' }}
+        />
+        {['all', 'workstation', 'server', 'network', 'mobile'].map(t => (
+          <button
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize"
+            style={{
+              background: typeFilter === t ? 'rgba(16,185,129,0.15)' : 'hsl(222,33%,14%)',
+              color: typeFilter === t ? '#10b981' : 'hsl(215,15%,50%)',
+              border: `1px solid ${typeFilter === t ? 'rgba(16,185,129,0.3)' : 'hsl(222,22%,20%)'}`,
+            }}
+          >{t === 'all' ? 'All Types' : t}</button>
+        ))}
       </div>
 
-      {/* Add Endpoint Wizard */}
-      <AnimatePresence>
-        {showWizard && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(0,0,0,0.7)" }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-2xl rounded-2xl border overflow-hidden"
-              style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,22%)" }}
+      {/* Asset Table */}
+      <Card className="overflow-hidden">
+        <div
+          className="grid text-[10px] font-semibold uppercase tracking-wider px-4 py-2.5"
+          style={{ gridTemplateColumns: '40px 150px 120px 100px 100px 100px 100px 100px 1fr', background: 'hsl(222,40%,9%)', borderBottom: '1px solid hsl(222,22%,16%)', color: 'hsl(215,15%,40%)' }}
+        >
+          <span />
+          <span>HOSTNAME</span>
+          <span>IP ADDRESS</span>
+          <span>OS</span>
+          <span>TYPE</span>
+          <span>STATUS</span>
+          <span>RISK SCORE</span>
+          <span>AGENT VER</span>
+          <span>TAGS</span>
+        </div>
+        {filtered.map((asset, idx) => {
+          const Icon = typeIcons[asset.type] || Server;
+          return (
+            <div
+              key={asset.id}
+              className="grid items-center px-4 py-3 text-xs border-b hover:opacity-90"
+              style={{
+                gridTemplateColumns: '40px 150px 120px 100px 100px 100px 100px 100px 1fr',
+                borderColor: 'hsl(222,22%,13%)',
+                background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+              }}
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "hsl(222,25%,18%)" }}>
-                <div>
-                  <h2 className="text-base font-semibold text-slate-100">Add Endpoint</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Step {wizardStep} of 3 — Deploy Sentinel Agent</p>
-                </div>
-                <button onClick={() => { setShowWizard(false); setWizardStep(1); }} className="text-slate-500 hover:text-slate-300">
-                  <X size={18} />
-                </button>
+              <Icon size={14} style={{ color: osColors[asset.os] || '#94a3b8' }} />
+              <span className="font-mono font-semibold" style={{ color: '#f1f5f9' }}>{asset.hostname}</span>
+              <span className="font-mono" style={{ color: '#38bdf8' }}>{asset.ip}</span>
+              <span style={{ color: osColors[asset.os] || '#94a3b8' }}>{asset.os}</span>
+              <span className="capitalize" style={{ color: 'hsl(215,20%,60%)' }}>{asset.type}</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor[asset.status] }} />
+                <span className="capitalize" style={{ color: statusColor[asset.status] }}>{asset.status}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(222,22%,20%)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${asset.riskScore}%`, background: riskColor(asset.riskScore) }} />
+                </div>
+                <span className="font-mono font-bold w-6 text-right" style={{ color: riskColor(asset.riskScore), fontSize: 11 }}>{asset.riskScore}</span>
+              </div>
+              <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{asset.agentVersion}</span>
+              <div className="flex gap-1 flex-wrap">
+                {asset.tags.slice(0, 2).map(tag => (
+                  <Badge key={tag} color="#a78bfa" className="text-[10px]">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </Card>
 
-              <div className="p-6">
-                {wizardStep === 1 && (
+      {/* Add Endpoint Wizard Modal */}
+      {showWizard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <Card className="w-full max-w-2xl mx-4 overflow-hidden">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid hsl(222,22%,18%)' }}>
+              <div>
+                <h2 className="font-bold" style={{ color: '#f1f5f9' }}>Add New Endpoint</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>Step {wizardStep} of 3</p>
+              </div>
+              <button onClick={() => setShowWizard(false)}>
+                <X size={18} style={{ color: 'hsl(215,15%,50%)' }} />
+              </button>
+            </div>
+
+            {/* Step progress */}
+            <div className="px-5 py-3 flex gap-2" style={{ borderBottom: '1px solid hsl(222,22%,16%)' }}>
+              {[1,2,3].map(s => (
+                <div key={s} className="flex items-center gap-2 flex-1">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: wizardStep >= s ? '#10b981' : 'hsl(222,22%,20%)', color: wizardStep >= s ? '#fff' : 'hsl(215,15%,45%)' }}
+                  >{s}</div>
+                  <span className="text-xs" style={{ color: wizardStep >= s ? '#10b981' : 'hsl(215,15%,40%)' }}>
+                    {s === 1 ? 'Configure' : s === 2 ? 'Install Script' : 'Verify'}
+                  </span>
+                  {s < 3 && <div className="flex-1 h-0.5 rounded" style={{ background: wizardStep > s ? '#10b981' : 'hsl(222,22%,20%)' }} />}
+                </div>
+              ))}
+            </div>
+
+            <div className="p-5">
+              {wizardStep === 1 && (
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-slate-200 mb-4">Select Operating System</h3>
+                    <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'hsl(215,15%,45%)' }}>Hostname</label>
+                    <input
+                      type="text"
+                      value={wizardHost}
+                      onChange={e => setWizardHost(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none font-mono"
+                      style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,20%)', color: '#f1f5f9' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'hsl(215,15%,45%)' }}>Operating System</label>
                     <div className="grid grid-cols-3 gap-3">
-                      {(["windows","linux","macos"] as const).map(os => (
+                      {['Windows', 'Linux', 'macOS'].map(os => (
                         <button
                           key={os}
-                          onClick={() => setSelectedOS(os)}
-                          className={`p-4 rounded-xl border text-center transition-all ${
-                            selectedOS === os
-                              ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-400"
-                              : "border-white/8 bg-white/3 text-slate-400 hover:border-white/15"
-                          }`}
-                        >
-                          <div className="text-2xl mb-2">{os === "windows" ? "🪟" : os === "linux" ? "🐧" : "🍎"}</div>
-                          <p className="text-sm font-medium capitalize">{os}</p>
-                        </button>
+                          onClick={() => setWizardOS(os)}
+                          className="py-3 rounded-lg text-sm font-medium"
+                          style={{
+                            background: wizardOS === os ? 'rgba(16,185,129,0.15)' : 'hsl(222,40%,9%)',
+                            border: `1px solid ${wizardOS === os ? 'rgba(16,185,129,0.4)' : 'hsl(222,22%,20%)'}`,
+                            color: wizardOS === os ? '#10b981' : 'hsl(215,20%,60%)',
+                          }}
+                        >{os}</button>
                       ))}
                     </div>
                   </div>
-                )}
+                  <button
+                    onClick={() => setWizardStep(2)}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}
+                  >Generate Installation Script →</button>
+                </div>
+              )}
 
-                {wizardStep === 2 && (
+              {wizardStep === 2 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm" style={{ color: '#cbd5e1' }}>Run this script on <strong style={{ color: '#10b981' }}>{wizardHost}</strong> ({wizardOS})</p>
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs"
+                      style={{ background: copied ? 'rgba(16,185,129,0.15)' : 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,20%)', color: copied ? '#10b981' : '#cbd5e1' }}
+                    >
+                      {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+                    </button>
+                  </div>
+                  <pre
+                    className="font-mono text-xs p-4 rounded-lg overflow-auto custom-scroll"
+                    style={{ background: 'hsl(222,47%,5%)', border: '1px solid hsl(222,22%,16%)', color: '#86efac', maxHeight: 300, lineHeight: 1.7 }}
+                  >{installScripts[wizardOS]?.(wizardHost) || ''}</pre>
+                  <div className="flex gap-3">
+                    <button onClick={() => setWizardStep(1)} className="flex-1 py-2.5 rounded-lg text-sm" style={{ border: '1px solid hsl(222,22%,20%)', color: 'hsl(215,15%,50%)' }}>← Back</button>
+                    <button onClick={() => setWizardStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}>Script Ready →</button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 3 && (
+                <div className="space-y-4 text-center">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: 'rgba(16,185,129,0.15)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#10b981' }}>
+                      <Check size={18} className="text-white" />
+                    </div>
+                  </div>
                   <div>
-                    <h3 className="text-sm font-medium text-slate-200 mb-4">Installation Script</h3>
-                    <div className="relative">
-                      <pre className="text-[11px] font-mono text-slate-400 p-4 rounded-xl overflow-x-auto max-h-80" style={{ background: "hsl(222,47%,6%)", border: "1px solid hsl(222,25%,16%)" }}>
-                        {INSTALL_SCRIPTS[selectedOS]}
-                      </pre>
-                      <button
-                        onClick={copyScript}
-                        className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style={{ background: "hsl(222,35%,16%)" }}
-                      >
-                        {copied ? <CheckCircle size={12} className="text-emerald-400" /> : <Copy size={12} className="text-slate-400" />}
-                        <span className={copied ? "text-emerald-400" : "text-slate-400"}>{copied ? "Copied!" : "Copy"}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {wizardStep === 3 && (
-                  <div className="text-center py-6">
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle size={28} className="text-emerald-400" />
-                    </div>
-                    <h3 className="text-base font-semibold text-slate-200 mb-2">Agent Enrollment Pending</h3>
-                    <p className="text-sm text-slate-500 mb-4">
-                      Run the installation script on your endpoint. The agent will appear in the asset list within 60 seconds of successful installation.
+                    <h3 className="font-bold text-lg" style={{ color: '#f1f5f9' }}>Awaiting Agent Check-in</h3>
+                    <p className="text-sm mt-1" style={{ color: 'hsl(215,15%,50%)' }}>
+                      Run the script on <strong style={{ color: '#10b981' }}>{wizardHost}</strong>. The agent will appear in this inventory within 60 seconds of installation.
                     </p>
-                    <div className="flex items-center justify-center gap-2 text-xs font-mono text-emerald-400">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      Waiting for enrollment signal...
-                    </div>
                   </div>
-                )}
-              </div>
-
-              <div className="flex justify-between px-6 py-4 border-t" style={{ borderColor: "hsl(222,25%,18%)" }}>
-                <button
-                  onClick={() => wizardStep > 1 ? setWizardStep(s => s - 1) : setShowWizard(false)}
-                  className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors border border-white/8"
-                >
-                  {wizardStep === 1 ? "Cancel" : "Back"}
-                </button>
-                <button
-                  onClick={() => wizardStep < 3 ? setWizardStep(s => s + 1) : setShowWizard(false)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-emerald-900 bg-emerald-400 hover:bg-emerald-300 transition-colors"
-                >
-                  {wizardStep === 3 ? "Done" : "Next"}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Layout>
+                  <div className="text-xs px-4 py-3 rounded-lg text-left space-y-1 font-mono" style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,16%)', color: '#10b981' }}>
+                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>[waiting]</span> Listening for agent beacon on :55000...</div>
+                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>[info]</span>   Enrollment token expires in 24h</div>
+                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>[info]</span>   Expected hostname: {wizardHost}</div>
+                  </div>
+                  <button onClick={() => setShowWizard(false)} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}>
+                    Close & Monitor
+                  </button>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
   );
-};
+}

@@ -1,171 +1,165 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Shield } from "lucide-react";
-import { Layout } from "../components/Layout";
-import { mitreTactics } from "../data/mockData";
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Target } from 'lucide-react';
+import Card from '../components/ui/Card';
+import { mitreTactics } from '../data';
 
-const heatColor = (hits: number): string => {
-  if (hits === 0) return "hsl(222,35%,12%)";
-  if (hits <= 3) return "hsl(152,69%,20%)";
-  if (hits <= 8) return "hsl(152,69%,32%)";
-  if (hits <= 14) return "hsl(45,95%,35%)";
-  return "hsl(0,85%,40%)";
+const getHeatColor = (hits: number): string => {
+  if (hits === 0) return 'hsl(222,33%,14%)';
+  if (hits <= 2) return 'rgba(16,185,129,0.2)';
+  if (hits <= 4) return 'rgba(234,179,8,0.3)';
+  if (hits <= 6) return 'rgba(249,115,22,0.35)';
+  return 'rgba(239,68,68,0.4)';
 };
 
-const heatBorderColor = (hits: number): string => {
-  if (hits === 0) return "hsl(222,25%,18%)";
-  if (hits <= 3) return "hsl(152,69%,30%)";
-  if (hits <= 8) return "hsl(152,69%,40%)";
-  if (hits <= 14) return "hsl(45,95%,45%)";
-  return "hsl(0,85%,50%)";
+const getTextColor = (hits: number): string => {
+  if (hits === 0) return 'hsl(215,15%,35%)';
+  if (hits <= 2) return '#10b981';
+  if (hits <= 4) return '#eab308';
+  if (hits <= 6) return '#f97316';
+  return '#ef4444';
 };
 
-const heatTextColor = (hits: number): string => {
-  if (hits === 0) return "hsl(215,20%,35%)";
-  if (hits <= 3) return "hsl(152,69%,60%)";
-  if (hits <= 8) return "hsl(152,69%,70%)";
-  if (hits <= 14) return "hsl(45,95%,70%)";
-  return "hsl(0,85%,70%)";
-};
+const totalHits = mitreTactics.reduce((sum, t) => sum + t.techniques.reduce((s, tech) => s + tech.hits, 0), 0);
+const tacticsCovered = mitreTactics.filter(t => t.techniques.some(tech => tech.hits > 0)).length;
+const coverageScore = Math.round((tacticsCovered / mitreTactics.length) * 100);
 
-const heatLabel = (hits: number) => {
-  if (hits === 0) return "None";
-  if (hits <= 3) return "Low";
-  if (hits <= 8) return "Medium";
-  if (hits <= 14) return "High";
-  return "Critical";
-};
-
-export const MitreHeatmap: React.FC = () => {
-  const [expandedTactic, setExpandedTactic] = useState<string | null>(null);
-
-  const totalHits = mitreTactics.reduce((sum, t) => sum + t.techniques.reduce((s, tech) => s + tech.hits, 0), 0);
-  const activeTactics = mitreTactics.filter(t => t.techniques.some(tech => tech.hits > 0)).length;
-  const coverageScore = Math.round((activeTactics / mitreTactics.length) * 100);
+export default function MitreHeatmap() {
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
-    <Layout title="MITRE ATT&CK Heatmap" subtitle="Adversary tactic & technique coverage in your environment">
-      {/* Coverage stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="rounded-xl border p-4" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-          <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">Coverage Score</p>
-          <div className="flex items-end gap-2">
-            <p className="text-3xl font-bold font-mono text-emerald-400">{coverageScore}%</p>
-            <p className="text-xs text-slate-500 mb-1">of tactics</p>
-          </div>
-          <div className="mt-2 h-1.5 rounded-full bg-white/5">
-            <div className="h-full rounded-full bg-emerald-400" style={{ width: `${coverageScore}%` }} />
-          </div>
+    <div className="p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>MITRE ATT&CK Heatmap</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
+            Technique coverage across {mitreTactics.length} tactics · {totalHits} total detections
+          </p>
         </div>
-        <div className="rounded-xl border p-4" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-          <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">Active Tactics</p>
-          <p className="text-3xl font-bold font-mono text-orange-400">{activeTactics} <span className="text-base text-slate-600">/ {mitreTactics.length}</span></p>
-          <p className="text-xs text-slate-600 mt-1">Tactics with detections</p>
-        </div>
-        <div className="rounded-xl border p-4" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-          <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">Total Technique Hits</p>
-          <p className="text-3xl font-bold font-mono text-red-400">{totalHits}</p>
-          <p className="text-xs text-slate-600 mt-1">Across {mitreTactics.reduce((s,t)=>s+t.techniques.length,0)} techniques</p>
+        <div className="text-right">
+          <div className="text-3xl font-bold font-mono" style={{ color: '#10b981' }}>{coverageScore}%</div>
+          <div className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Coverage Score</div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-4 text-xs">
-        <span className="text-slate-600">Heat scale:</span>
+      <div className="flex items-center gap-4 flex-wrap text-xs">
+        <span style={{ color: 'hsl(215,15%,45%)' }}>Frequency:</span>
         {[
-          { label: "None (0)", color: "hsl(222,35%,18%)" },
-          { label: "Low (1-3)", color: "hsl(152,69%,25%)" },
-          { label: "Medium (4-8)", color: "hsl(152,69%,38%)" },
-          { label: "High (9-14)", color: "hsl(45,95%,42%)" },
-          { label: "Critical (15+)", color: "hsl(0,85%,45%)" },
-        ].map(({ label, color }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ background: color }} />
-            <span className="text-slate-500">{label}</span>
+          { label: 'None', color: 'hsl(222,33%,14%)', text: 'hsl(215,15%,35%)' },
+          { label: 'Low (1-2)', color: 'rgba(16,185,129,0.2)', text: '#10b981' },
+          { label: 'Medium (3-4)', color: 'rgba(234,179,8,0.3)', text: '#eab308' },
+          { label: 'High (5-6)', color: 'rgba(249,115,22,0.35)', text: '#f97316' },
+          { label: 'Critical (7+)', color: 'rgba(239,68,68,0.4)', text: '#ef4444' },
+        ].map(l => (
+          <div key={l.label} className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded" style={{ background: l.color, border: `1px solid ${l.text}30` }} />
+            <span style={{ color: 'hsl(215,20%,55%)' }}>{l.label}</span>
           </div>
         ))}
       </div>
 
-      {/* Heatmap Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 mb-6">
+      {/* Heatmap grid */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         {mitreTactics.map(tactic => {
-          const totalTacticHits = tactic.techniques.reduce((s, t) => s + t.hits, 0);
-          const isExpanded = expandedTactic === tactic.id;
-
+          const tacticHits = tactic.techniques.reduce((sum, t) => sum + t.hits, 0);
+          const isExpanded = expanded === tactic.id;
           return (
-            <motion.div
+            <Card
               key={tactic.id}
-              layout
-              className="rounded-xl border cursor-pointer transition-all hover:scale-105"
-              style={{
-                background: heatColor(totalTacticHits),
-                borderColor: heatBorderColor(totalTacticHits),
-              }}
-              onClick={() => setExpandedTactic(isExpanded ? null : tactic.id)}
+              className="overflow-hidden cursor-pointer"
+              onClick={() => setExpanded(isExpanded ? null : tactic.id)}
             >
-              <div className="p-3">
-                <p className="text-[9px] font-mono opacity-60 mb-1">{tactic.id}</p>
-                <p className="text-[11px] font-semibold leading-tight" style={{ color: heatTextColor(totalTacticHits) }}>
-                  {tactic.name}
-                </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[10px] font-mono font-bold" style={{ color: heatTextColor(totalTacticHits) }}>
-                    {totalTacticHits}
-                  </span>
-                  <span className="text-[9px] opacity-60" style={{ color: heatTextColor(totalTacticHits) }}>
-                    {heatLabel(totalTacticHits)}
-                  </span>
+              {/* Tactic header */}
+              <div
+                className="p-3"
+                style={{
+                  background: getHeatColor(tacticHits),
+                  borderBottom: isExpanded ? '1px solid hsl(222,22%,18%)' : 'none',
+                }}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider mb-1" style={{ color: 'hsl(215,15%,40%)' }}>
+                      {tactic.id}
+                    </div>
+                    <div className="text-xs font-semibold leading-tight" style={{ color: '#f1f5f9' }}>{tactic.name}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xl font-bold font-mono" style={{ color: getTextColor(tacticHits) }}>{tacticHits}</span>
+                    {isExpanded ? <ChevronUp size={12} style={{ color: 'hsl(215,15%,40%)' }} /> : <ChevronDown size={12} style={{ color: 'hsl(215,15%,40%)' }} />}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {tactic.techniques.map(tech => (
+                    <div
+                      key={tech.id}
+                      className="w-3 h-3 rounded-sm"
+                      title={`${tech.id}: ${tech.name} (${tech.hits} hits)`}
+                      style={{ background: getHeatColor(tech.hits), border: `1px solid ${getTextColor(tech.hits)}40` }}
+                    />
+                  ))}
                 </div>
               </div>
-            </motion.div>
+
+              {/* Expanded techniques */}
+              {isExpanded && (
+                <div className="p-3 space-y-2">
+                  {tactic.techniques.map(tech => (
+                    <div key={tech.id} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-mono text-[10px] flex-shrink-0" style={{ color: '#a78bfa' }}>{tech.id}</span>
+                        <span className="truncate" style={{ color: 'hsl(215,20%,60%)' }}>{tech.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(222,22%,20%)' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.min(tech.hits / 10 * 100, 100)}%`,
+                              background: getTextColor(tech.hits),
+                            }}
+                          />
+                        </div>
+                        <span className="font-mono w-4 text-right font-bold" style={{ color: getTextColor(tech.hits) }}>{tech.hits}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           );
         })}
       </div>
 
-      {/* Expanded tactic detail */}
-      <AnimatePresence>
-        {expandedTactic && (() => {
-          const tactic = mitreTactics.find(t => t.id === expandedTactic);
-          if (!tactic) return null;
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="rounded-xl border p-5"
-              style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,22%)" }}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Shield size={18} className="text-emerald-400" />
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-200">{tactic.name}</h3>
-                  <p className="text-xs font-mono text-slate-500">{tactic.id}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {tactic.techniques.map(tech => (
-                  <div key={tech.id} className="flex items-center gap-3 py-2 border-b last:border-0" style={{ borderColor: "hsl(222,25%,16%)" }}>
-                    <div className="w-28 flex-shrink-0">
-                      <div className="h-1.5 rounded-full bg-white/5">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${Math.min((tech.hits / 20) * 100, 100)}%`, background: heatColor(tech.hits) !== "hsl(222,35%,12%)" ? heatColor(tech.hits) : "transparent" }}
-                        />
-                      </div>
-                    </div>
-                    <span className="font-mono text-[10px] text-slate-500 flex-shrink-0 w-20">{tech.id}</span>
-                    <span className="text-xs text-slate-300 flex-1">{tech.name}</span>
-                    <span className={`font-mono text-sm font-bold ${tech.hits === 0 ? "text-slate-700" : tech.hits < 5 ? "text-emerald-400" : tech.hits < 10 ? "text-yellow-400" : "text-red-400"}`}>
-                      {tech.hits}
-                    </span>
-                    <span className="text-[10px] text-slate-600">hits</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
-    </Layout>
+      {/* Summary */}
+      <Card className="p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <Target size={16} style={{ color: '#10b981' }} />
+          <h3 className="font-semibold text-sm" style={{ color: '#f1f5f9' }}>Coverage Summary</h3>
+        </div>
+        <div className="grid grid-cols-4 gap-4 text-center">
+          <div>
+            <div className="text-xl font-bold font-mono" style={{ color: '#10b981' }}>{tacticsCovered}/{mitreTactics.length}</div>
+            <div className="text-xs mt-1" style={{ color: 'hsl(215,15%,45%)' }}>Tactics Detected</div>
+          </div>
+          <div>
+            <div className="text-xl font-bold font-mono" style={{ color: '#38bdf8' }}>
+              {mitreTactics.reduce((sum, t) => sum + t.techniques.filter(tech => tech.hits > 0).length, 0)}
+            </div>
+            <div className="text-xs mt-1" style={{ color: 'hsl(215,15%,45%)' }}>Techniques Detected</div>
+          </div>
+          <div>
+            <div className="text-xl font-bold font-mono" style={{ color: '#ef4444' }}>
+              {mitreTactics.reduce((sum, t) => sum + t.techniques.filter(tech => tech.hits >= 7).length, 0)}
+            </div>
+            <div className="text-xs mt-1" style={{ color: 'hsl(215,15%,45%)' }}>Critical Frequency</div>
+          </div>
+          <div>
+            <div className="text-xl font-bold font-mono" style={{ color: '#a78bfa' }}>{totalHits}</div>
+            <div className="text-xs mt-1" style={{ color: 'hsl(215,15%,45%)' }}>Total Detections</div>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
-};
+}

@@ -1,154 +1,111 @@
-import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Shield, LayoutDashboard, Bell, Monitor,
-  Globe, Search, FileText, Map, Bug, CheckSquare, Users,
-  ChevronRight, Activity, Lock
-} from "lucide-react";
-import { LiveDot } from "./ui/LiveDot";
+  LayoutDashboard, Shield, Bell, Server, Database,
+  Search, FileCheck, Grid, Bug, CheckSquare, Users,
+  Activity, Lock
+} from 'lucide-react';
 
 const navGroups = [
   {
-    label: "Core",
+    label: 'Core',
     items: [
-      { path: "/", label: "Dashboard", icon: LayoutDashboard },
-      { path: "/events", label: "Security Events", icon: Activity, badge: "LIVE" },
-      { path: "/alerts", label: "Alerts", icon: Bell, badge: "8" },
+      { path: '/',        icon: LayoutDashboard, label: 'Dashboard' },
+      { path: '/events',  icon: Activity,        label: 'Security Events' },
+      { path: '/alerts',  icon: Bell,            label: 'Alerts',          badge: 5 },
+      { path: '/assets',  icon: Server,          label: 'Assets' },
+      { path: '/threat-intel', icon: Database,   label: 'Threat Intel' },
+      { path: '/search',  icon: Search,          label: 'Log Search' },
     ],
   },
   {
-    label: "Intelligence",
+    label: 'Advanced',
     items: [
-      { path: "/threat-intel", label: "Threat Intel", icon: Globe },
-      { path: "/mitre", label: "MITRE ATT&CK", icon: Map },
-      { path: "/uba", label: "User Behavior", icon: Users },
-    ],
-  },
-  {
-    label: "Detection",
-    items: [
-      { path: "/fim", label: "File Integrity", icon: FileText },
-      { path: "/search", label: "Log Search", icon: Search },
-    ],
-  },
-  {
-    label: "Management",
-    items: [
-      { path: "/assets", label: "Assets", icon: Monitor },
-      { path: "/vulnerabilities", label: "Vulnerabilities", icon: Bug },
-      { path: "/compliance", label: "Compliance", icon: CheckSquare },
+      { path: '/fim',           icon: FileCheck,  label: 'File Integrity' },
+      { path: '/mitre',         icon: Grid,       label: 'MITRE ATT&CK' },
+      { path: '/vulnerabilities', icon: Bug,      label: 'Vulnerabilities' },
+      { path: '/compliance',    icon: CheckSquare, label: 'Compliance' },
+      { path: '/uba',           icon: Users,      label: 'User Behavior' },
     ],
   },
 ];
 
-interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
-
-export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
+export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {!collapsed && (
-        <div
-          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
-          onClick={onToggle}
-        />
-      )}
-
-      <aside
-        className={`fixed top-0 left-0 h-full z-30 flex flex-col border-r transition-all duration-300 ${
-          collapsed ? "w-0 lg:w-16 overflow-hidden" : "w-64"
-        }`}
-        style={{ background: "hsl(222,42%,7%)", borderColor: "hsl(222,25%,15%)" }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 h-14 border-b flex-shrink-0" style={{ borderColor: "hsl(222,25%,15%)" }}>
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
-            <Shield size={16} className="text-emerald-400" />
-          </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-slate-100 tracking-wide">SENTINEL</p>
-              <p className="text-[9px] text-emerald-400/80 font-mono tracking-widest uppercase">SIEM v4.7</p>
-            </div>
-          )}
+    <aside
+      className="w-60 flex-shrink-0 flex flex-col h-screen sticky top-0"
+      style={{ background: 'hsl(222, 40%, 9%)', borderRight: '1px solid hsl(222, 25%, 17%)' }}
+    >
+      {/* Logo */}
+      <div className="px-5 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid hsl(222, 25%, 17%)' }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)' }}>
+          <Shield size={16} className="text-white" />
         </div>
+        <div>
+          <div className="font-bold text-sm tracking-wide" style={{ color: '#f1f5f9' }}>SENTINEL</div>
+          <div className="text-[10px] font-mono" style={{ color: '#10b981' }}>SIEM v2.4.1</div>
+        </div>
+      </div>
 
-        {/* Live status */}
-        {!collapsed && (
-          <div className="mx-3 mt-3 px-3 py-2 rounded-lg flex items-center gap-2" style={{ background: "hsl(152,69%,46%,0.08)", border: "1px solid hsl(152,69%,46%,0.2)" }}>
-            <LiveDot />
-            <span className="text-xs text-emerald-400 font-mono">SOC ACTIVE</span>
-            <span className="ml-auto text-[10px] text-emerald-400/60 font-mono">24/7</span>
-          </div>
-        )}
+      {/* Live indicator */}
+      <div className="px-5 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid hsl(222, 25%, 17%)', background: 'rgba(16,185,129,0.05)' }}>
+        <span className="w-2 h-2 rounded-full pulse-dot" style={{ background: '#10b981' }} />
+        <span className="text-[11px] font-mono" style={{ color: '#10b981' }}>LIVE MONITORING ACTIVE</span>
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-          {navGroups.map((group) => (
-            <div key={group.label}>
-              {!collapsed && (
-                <p className="text-[9px] font-semibold text-slate-600 uppercase tracking-widest px-2 mb-1">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {group.items.map(({ path, label, icon: Icon, badge }) => {
-                  const isActive = location.pathname === path;
-                  return (
-                    <NavLink
-                      key={path}
-                      to={path}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm transition-all duration-150 group relative ${
-                        isActive
-                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                          : "text-slate-400 hover:bg-white/4 hover:text-slate-200"
-                      }`}
-                    >
-                      <Icon size={16} className={`flex-shrink-0 ${isActive ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-300"}`} />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 truncate font-medium">{label}</span>
-                          {badge === "LIVE" && (
-                            <span className="text-[9px] font-mono font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 px-1.5 py-0.5 rounded">
-                              LIVE
-                            </span>
-                          )}
-                          {badge && badge !== "LIVE" && (
-                            <span className="text-[10px] font-mono font-bold text-orange-400 bg-orange-400/10 border border-orange-400/30 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                              {badge}
-                            </span>
-                          )}
-                          {isActive && <ChevronRight size={12} className="text-emerald-400/50 flex-shrink-0" />}
-                        </>
-                      )}
-                    </NavLink>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        {!collapsed && (
-          <div className="p-3 border-t flex-shrink-0" style={{ borderColor: "hsl(222,25%,15%)" }}>
-            <div className="flex items-center gap-2 px-2 py-2">
-              <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-                <Lock size={12} className="text-emerald-400" />
-              </div>
-              <div className="overflow-hidden">
-                <p className="text-xs font-medium text-slate-300 truncate">SOC Analyst</p>
-                <p className="text-[10px] text-slate-600 truncate">Level 2 · admin@sentinel.io</p>
-              </div>
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto custom-scroll space-y-5">
+        {navGroups.map(group => (
+          <div key={group.label}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest px-2 mb-2" style={{ color: 'hsl(215,15%,38%)' }}>
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(item => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={`sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative group`}
+                    style={{
+                      background: isActive ? 'rgba(16,185,129,0.12)' : 'transparent',
+                      color: isActive ? '#10b981' : 'hsl(215,20%,60%)',
+                      border: isActive ? '1px solid rgba(16,185,129,0.2)' : '1px solid transparent',
+                    }}
+                  >
+                    <Icon size={16} style={{ flexShrink: 0 }} />
+                    <span className="flex-1">{item.label}</span>
+                    {item.badge && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold" style={{ background: '#ef444420', color: '#ef4444' }}>
+                        {item.badge}
+                      </span>
+                    )}
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r" style={{ background: '#10b981' }} />
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
           </div>
-        )}
-      </aside>
-    </>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-4 py-4" style={{ borderTop: '1px solid hsl(222, 25%, 17%)' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)' }}>
+            <Lock size={12} style={{ color: '#10b981' }} />
+          </div>
+          <div>
+            <p className="text-xs font-medium" style={{ color: '#f1f5f9' }}>SOC Analyst</p>
+            <p className="text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>Tier 2 • Read/Write</p>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
-};
+}

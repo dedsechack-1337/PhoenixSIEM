@@ -1,130 +1,104 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-@theme {
-  --color-bg-primary: hsl(222, 47%, 6%);
-  --color-bg-secondary: hsl(222, 40%, 9%);
-  --color-bg-card: hsl(222, 35%, 11%);
-  --color-bg-hover: hsl(222, 30%, 14%);
-  --color-border: hsl(222, 25%, 18%);
-  --color-border-bright: hsl(222, 25%, 25%);
-  --color-emerald: hsl(152, 69%, 46%);
-  --color-emerald-dim: hsl(152, 69%, 36%);
-  --color-emerald-glow: hsl(152, 69%, 56%);
-  --color-text-primary: hsl(210, 40%, 92%);
-  --color-text-secondary: hsl(215, 20%, 60%);
-  --color-text-muted: hsl(215, 15%, 40%);
-  --color-critical: hsl(0, 85%, 60%);
-  --color-high: hsl(25, 95%, 55%);
-  --color-medium: hsl(45, 95%, 55%);
-  --color-low: hsl(152, 69%, 46%);
-  --color-info: hsl(200, 80%, 55%);
-  --font-mono: "JetBrains Mono", monospace;
-  --font-sans: "Inter", sans-serif;
+:root {
+  --bg-base: hsl(222, 47%, 6%);
+  --bg-surface: hsl(222, 40%, 9%);
+  --bg-elevated: hsl(222, 35%, 12%);
+  --bg-card: hsl(222, 33%, 14%);
+  --border: hsl(222, 25%, 20%);
+  --border-subtle: hsl(222, 22%, 16%);
+  --text-primary: hsl(210, 40%, 96%);
+  --text-secondary: hsl(215, 20%, 65%);
+  --text-muted: hsl(215, 15%, 45%);
+  --accent-emerald: hsl(160, 84%, 39%);
+  --accent-emerald-glow: hsl(160, 84%, 39%, 0.15);
+  --critical: hsl(0, 84%, 60%);
+  --high: hsl(25, 95%, 55%);
+  --medium: hsl(45, 96%, 56%);
+  --low: hsl(160, 84%, 39%);
+  --info: hsl(200, 90%, 55%);
 }
 
 * {
   box-sizing: border-box;
 }
 
-html, body, #root {
-  height: 100%;
+html, body {
   margin: 0;
   padding: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
 }
 
-body {
-  font-family: "Inter", sans-serif;
-  background-color: hsl(222, 47%, 6%);
-  color: hsl(210, 40%, 92%);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+body::-webkit-scrollbar { width: 6px; }
+body::-webkit-scrollbar-track { background: var(--bg-base); }
+body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+.font-mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
 
-::-webkit-scrollbar-track {
-  background: hsl(222, 35%, 8%);
-}
+/* Scrollbar for panels */
+.custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-::-webkit-scrollbar-thumb {
-  background: hsl(222, 25%, 22%);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(152, 69%, 36%);
-}
-
-.font-mono {
-  font-family: "JetBrains Mono", monospace;
-}
-
-/* Glow effects */
-.glow-emerald {
-  box-shadow: 0 0 20px hsla(152, 69%, 46%, 0.3);
-}
-
-.glow-red {
-  box-shadow: 0 0 20px hsla(0, 85%, 60%, 0.3);
-}
+/* Glow effect */
+.glow-emerald { box-shadow: 0 0 20px hsl(160, 84%, 39%, 0.2); }
+.glow-red { box-shadow: 0 0 20px hsl(0, 84%, 60%, 0.2); }
 
 /* Pulse animation for live indicators */
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
+.pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
 
-.pulse-dot {
-  animation: pulse-dot 1.5s ease-in-out infinite;
-}
-
-/* Scrolling ticker */
 @keyframes ticker-scroll {
   0% { transform: translateY(0); }
   100% { transform: translateY(-50%); }
 }
 
-/* Grid pattern overlay */
-.grid-overlay {
-  background-image: 
-    linear-gradient(hsla(152, 69%, 46%, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, hsla(152, 69%, 46%, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+/* Gradient borders */
+.gradient-border {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: 12px;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, hsl(160, 84%, 39%, 0.4), hsl(222, 25%, 25%, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
-/* Card shimmer */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* Recharts overrides */
+.recharts-tooltip-wrapper { outline: none !important; }
+.recharts-default-tooltip {
+  background: hsl(222, 35%, 12%) !important;
+  border: 1px solid hsl(222, 25%, 20%) !important;
+  border-radius: 8px !important;
+  color: hsl(210, 40%, 96%) !important;
 }
 
-.card-border-glow {
-  border: 1px solid hsl(222, 25%, 18%);
-  transition: border-color 0.2s ease;
+/* Sidebar transition */
+.sidebar-item {
+  transition: all 0.15s ease;
 }
 
-.card-border-glow:hover {
-  border-color: hsla(152, 69%, 46%, 0.4);
+/* Card hover */
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-
-/* Recharts custom */
-.recharts-tooltip-wrapper {
-  outline: none;
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
-
-/* Severity color classes */
-.sev-critical { color: hsl(0, 85%, 60%); }
-.sev-high { color: hsl(25, 95%, 55%); }
-.sev-medium { color: hsl(45, 95%, 55%); }
-.sev-low { color: hsl(152, 69%, 46%); }
-.sev-info { color: hsl(200, 80%, 55%); }
-
-.bg-sev-critical { background-color: hsla(0, 85%, 60%, 0.15); border: 1px solid hsla(0, 85%, 60%, 0.3); }
-.bg-sev-high { background-color: hsla(25, 95%, 55%, 0.15); border: 1px solid hsla(25, 95%, 55%, 0.3); }
-.bg-sev-medium { background-color: hsla(45, 95%, 55%, 0.15); border: 1px solid hsla(45, 95%, 55%, 0.3); }
-.bg-sev-low { background-color: hsla(152, 69%, 46%, 0.15); border: 1px solid hsla(152, 69%, 46%, 0.3); }
-.bg-sev-info { background-color: hsla(200, 80%, 55%, 0.15); border: 1px solid hsla(200, 80%, 55%, 0.3); }

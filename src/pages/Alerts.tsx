@@ -1,248 +1,170 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, ChevronDown, ChevronRight, User, Hash, Shield } from "lucide-react";
-import { Layout } from "../components/Layout";
-import { SeverityBadge } from "../components/ui/SeverityBadge";
-import { alerts, Alert, AlertStatus, Severity } from "../data/mockData";
-import { format } from "date-fns";
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, ExternalLink, User, MessageSquare } from 'lucide-react';
+import Card from '../components/ui/Card';
+import SeverityBadge from '../components/ui/SeverityBadge';
+import Badge from '../components/ui/Badge';
+import { alerts, AlertStatus, statusColors } from '../data';
 
-const statusConfig: Record<AlertStatus, { label: string; color: string }> = {
-  open: { label: "Open", color: "text-red-400 bg-red-400/10 border-red-400/30" },
-  acknowledged: { label: "Acknowledged", color: "text-orange-400 bg-orange-400/10 border-orange-400/30" },
-  investigating: { label: "Investigating", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
-  resolved: { label: "Resolved", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30" },
-  closed: { label: "Closed", color: "text-slate-400 bg-slate-400/10 border-slate-400/30" },
+const statusLabels: Record<AlertStatus, string> = {
+  open: 'Open',
+  acknowledged: 'Acknowledged',
+  investigating: 'Investigating',
+  resolved: 'Resolved',
+  closed: 'Closed',
 };
 
-const statusFlow: AlertStatus[] = ["open", "acknowledged", "investigating", "resolved", "closed"];
+const statusOrder: AlertStatus[] = ['open', 'acknowledged', 'investigating', 'resolved', 'closed'];
 
-export const Alerts: React.FC = () => {
-  const [alertList, setAlertList] = useState<Alert[]>([...alerts]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<AlertStatus | "all">("all");
-  const [filterSeverity, setFilterSeverity] = useState<Severity | "all">("all");
-  const [noteInput, setNoteInput] = useState("");
+export default function Alerts() {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<AlertStatus | 'all'>('all');
+  const [localAlerts, setLocalAlerts] = useState(alerts);
 
-  const advanceStatus = (id: string) => {
-    setAlertList(prev => prev.map(a => {
-      if (a.id !== id) return a;
-      const currentIndex = statusFlow.indexOf(a.status);
-      const nextStatus = statusFlow[Math.min(currentIndex + 1, statusFlow.length - 1)];
-      return { ...a, status: nextStatus };
-    }));
+  const filtered = localAlerts.filter(a =>
+    statusFilter === 'all' || a.status === statusFilter
+  );
+
+  const counts = statusOrder.reduce((acc, s) => {
+    acc[s] = localAlerts.filter(a => a.status === s).length;
+    return acc;
+  }, {} as Record<AlertStatus, number>);
+
+  const updateStatus = (id: string, status: AlertStatus) => {
+    setLocalAlerts(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   };
 
-  const saveNote = (id: string) => {
-    if (!noteInput.trim()) return;
-    setAlertList(prev => prev.map(a => {
-      if (a.id !== id) return a;
-      return { ...a, notes: (a.notes ? a.notes + "\n" : "") + noteInput };
-    }));
-    setNoteInput("");
-  };
-
-  const filtered = alertList.filter(a => {
-    const matchStatus = filterStatus === "all" || a.status === filterStatus;
-    const matchSeverity = filterSeverity === "all" || a.severity === filterSeverity;
-    return matchStatus && matchSeverity;
-  });
-
-  const counts = {
-    open: alertList.filter(a => a.status === "open").length,
-    investigating: alertList.filter(a => a.status === "investigating").length,
-    acknowledged: alertList.filter(a => a.status === "acknowledged").length,
-  };
+  const formatTs = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <Layout title="Alerts" subtitle="Correlated detection alerts with MITRE ATT&CK mapping">
-      {/* Summary pills */}
-      <div className="flex flex-wrap gap-3 mb-5">
-        {[
-          { label: "Open", count: counts.open, color: "text-red-400 border-red-400/30 bg-red-400/5" },
-          { label: "Investigating", count: counts.investigating, color: "text-yellow-400 border-yellow-400/30 bg-yellow-400/5" },
-          { label: "Acknowledged", count: counts.acknowledged, color: "text-orange-400 border-orange-400/30 bg-orange-400/5" },
-        ].map(item => (
-          <div key={item.label} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono ${item.color}`}>
-            <span className="font-bold text-lg leading-none">{item.count}</span>
-            <span className="text-slate-400">{item.label}</span>
-          </div>
-        ))}
-
-        <div className="ml-auto flex gap-2">
-          <select
-            value={filterSeverity}
-            onChange={e => setFilterSeverity(e.target.value as Severity | "all")}
-            className="px-3 py-1.5 rounded-lg text-sm text-slate-300 outline-none cursor-pointer"
-            style={{ background: "hsl(222,35%,11%)", border: "1px solid hsl(222,25%,18%)" }}
-          >
-            <option value="all">All Severities</option>
-            {(["critical","high","medium","low"] as Severity[]).map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value as AlertStatus | "all")}
-            className="px-3 py-1.5 rounded-lg text-sm text-slate-300 outline-none cursor-pointer"
-            style={{ background: "hsl(222,35%,11%)", border: "1px solid hsl(222,25%,18%)" }}
-          >
-            <option value="all">All Statuses</option>
-            {statusFlow.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
+    <div className="p-6 space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Correlated Alerts</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
+          {localAlerts.filter(a => a.status === 'open').length} open • {localAlerts.filter(a => a.status === 'investigating').length} investigating
+        </p>
       </div>
 
-      {/* Alert List */}
-      <div className="space-y-2">
-        {filtered.map(alert => {
-          const sc = statusConfig[alert.status];
-          const isExpanded = expandedId === alert.id;
-          const canAdvance = alert.status !== "closed";
+      {/* Status tabs */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+          style={{
+            background: statusFilter === 'all' ? 'rgba(16,185,129,0.15)' : 'transparent',
+            color: statusFilter === 'all' ? '#10b981' : 'hsl(215,15%,50%)',
+            border: `1px solid ${statusFilter === 'all' ? 'rgba(16,185,129,0.3)' : 'hsl(222,22%,20%)'}`,
+          }}
+        >
+          All ({localAlerts.length})
+        </button>
+        {statusOrder.map(s => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+            style={{
+              background: statusFilter === s ? `${statusColors[s]}20` : 'transparent',
+              color: statusFilter === s ? statusColors[s] : 'hsl(215,15%,50%)',
+              border: `1px solid ${statusFilter === s ? `${statusColors[s]}40` : 'hsl(222,22%,20%)'}`,
+            }}
+          >
+            {statusLabels[s]} ({counts[s] || 0})
+          </button>
+        ))}
+      </div>
 
-          return (
-            <motion.div
-              key={alert.id}
-              layout
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border overflow-hidden"
-              style={{ background: "hsl(222,35%,11%)", borderColor: alert.severity === "critical" && alert.status === "open" ? "hsla(0,85%,60%,0.3)" : "hsl(222,25%,18%)" }}
+      {/* Alert list */}
+      <div className="space-y-3">
+        {filtered.map(alert => (
+          <Card key={alert.id} className="overflow-hidden">
+            {/* Alert row */}
+            <div
+              className="flex items-center gap-4 p-4 cursor-pointer hover:opacity-90"
+              style={{ borderLeft: `3px solid ${statusColors[alert.status]}` }}
+              onClick={() => setExpanded(expanded === alert.id ? null : alert.id)}
             >
-              {/* Header row */}
-              <div
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/2 transition-colors"
-                onClick={() => setExpandedId(isExpanded ? null : alert.id)}
-              >
-                <AlertTriangle
-                  size={16}
-                  className={alert.severity === "critical" ? "text-red-400 flex-shrink-0" : "text-orange-400 flex-shrink-0"}
-                />
-                <SeverityBadge severity={alert.severity} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-200 truncate">{alert.title}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-[10px] font-mono text-slate-500">{alert.mitreId}</span>
-                    <span className="text-[10px] text-slate-600">·</span>
-                    <span className="text-[10px] text-slate-500">{alert.affectedHost}</span>
-                    <span className="text-[10px] text-slate-600">·</span>
-                    <span className="text-[10px] font-mono text-slate-600">{format(alert.timestamp, "MMM d, HH:mm")}</span>
-                  </div>
+              <SeverityBadge severity={alert.severity} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm" style={{ color: '#f1f5f9' }}>{alert.title}</span>
+                  <Badge color={statusColors[alert.status]}>{statusLabels[alert.status]}</Badge>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border" style={{ background: "hsl(222,35%,9%)" }}>
-                    <span className="text-slate-500">{alert.eventCount} events</span>
-                  </span>
-                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border uppercase ${sc.color}`}>
-                    {sc.label}
-                  </span>
-                  {isExpanded ? <ChevronDown size={14} className="text-slate-500" /> : <ChevronRight size={14} className="text-slate-600" />}
+                <div className="flex items-center gap-3 mt-1 flex-wrap text-xs" style={{ color: 'hsl(215,15%,45%)' }}>
+                  <span className="font-mono" style={{ color: '#a78bfa' }}>{alert.mitreId}</span>
+                  <span>•</span>
+                  <span>{alert.mitreTactic} → {alert.mitreTechnique}</span>
+                  <span>•</span>
+                  <span>{alert.events} events</span>
+                  <span>•</span>
+                  <span>{alert.asset}</span>
                 </div>
               </div>
-
-              {/* Expanded detail */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden border-t"
-                    style={{ borderColor: "hsl(222,25%,16%)" }}
-                  >
-                    <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ background: "hsl(222,35%,9%)" }}>
-                      {/* Left: Details */}
-                      <div className="lg:col-span-2 space-y-4">
-                        <div>
-                          <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">Description</p>
-                          <p className="text-xs text-slate-400 leading-relaxed">{alert.description}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1 flex items-center gap-1"><Shield size={10} /> MITRE Tactic</p>
-                            <p className="text-xs font-mono text-emerald-400">{alert.mitreTactic}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">MITRE Technique</p>
-                            <p className="text-xs font-mono text-emerald-400">{alert.mitreTechnique}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1 flex items-center gap-1"><User size={10} /> Assignee</p>
-                            <p className="text-xs font-mono text-slate-300">{alert.assignee || "Unassigned"}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1 flex items-center gap-1"><Hash size={10} /> Alert ID</p>
-                            <p className="text-xs font-mono text-slate-500">{alert.id}</p>
-                          </div>
-                        </div>
-                        {alert.notes && (
-                          <div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">Investigation Notes</p>
-                            <div className="p-3 rounded-lg text-xs font-mono text-slate-400 leading-relaxed whitespace-pre-wrap" style={{ background: "hsl(222,47%,6%)" }}>
-                              {alert.notes}
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Add investigation note..."
-                            value={noteInput}
-                            onChange={e => setNoteInput(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && saveNote(alert.id)}
-                            className="flex-1 px-3 py-1.5 rounded-lg text-xs text-slate-300 placeholder-slate-600 outline-none"
-                            style={{ background: "hsl(222,47%,6%)", border: "1px solid hsl(222,25%,18%)" }}
-                          />
-                          <button
-                            onClick={() => saveNote(alert.id)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-400 hover:bg-emerald-400/10 transition-colors border border-emerald-400/20"
-                          >
-                            Add Note
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Right: Status workflow */}
-                      <div>
-                        <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-3">Alert Lifecycle</p>
-                        <div className="space-y-2">
-                          {statusFlow.map((status, idx) => {
-                            const currentIdx = statusFlow.indexOf(alert.status);
-                            const isPast = idx < currentIdx;
-                            const isCurrent = idx === currentIdx;
-
-                            return (
-                              <div key={status} className="flex items-center gap-2">
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                                  isCurrent ? "border-emerald-400 bg-emerald-400/20" :
-                                  isPast ? "border-slate-600 bg-slate-700" :
-                                  "border-slate-700 bg-transparent"
-                                }`}>
-                                  {isPast && <div className="w-2 h-2 rounded-full bg-slate-500" />}
-                                  {isCurrent && <div className="w-2 h-2 rounded-full bg-emerald-400" />}
-                                </div>
-                                <span className={`text-xs font-mono capitalize ${isCurrent ? "text-emerald-400" : isPast ? "text-slate-600" : "text-slate-700"}`}>
-                                  {status}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {canAdvance && (
-                          <button
-                            onClick={() => advanceStatus(alert.id)}
-                            className="mt-4 w-full py-2 rounded-lg text-xs font-medium text-emerald-400 border border-emerald-400/30 hover:bg-emerald-400/10 transition-colors"
-                          >
-                            Advance → {statusFlow[Math.min(statusFlow.indexOf(alert.status) + 1, statusFlow.length - 1)]}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
+              <div className="text-right flex-shrink-0 text-xs" style={{ color: 'hsl(215,15%,40%)' }}>
+                <div>{formatTs(alert.createdAt)}</div>
+                {alert.assignee && (
+                  <div className="flex items-center gap-1 mt-1 justify-end" style={{ color: '#10b981' }}>
+                    <User size={10} />
+                    {alert.assignee}
+                  </div>
                 )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
+              </div>
+              {expanded === alert.id ? <ChevronUp size={16} style={{ color: 'hsl(215,15%,40%)', flexShrink: 0 }} /> : <ChevronDown size={16} style={{ color: 'hsl(215,15%,40%)', flexShrink: 0 }} />}
+            </div>
+
+            {/* Expanded detail */}
+            {expanded === alert.id && (
+              <div className="px-4 pb-4 space-y-4" style={{ borderTop: '1px solid hsl(222,22%,16%)' }}>
+                <div className="pt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'hsl(215,15%,40%)' }}>Description</p>
+                    <p className="text-sm" style={{ color: '#cbd5e1' }}>{alert.description}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'hsl(215,15%,40%)' }}>IOCs Detected</p>
+                    <div className="space-y-1">
+                      {alert.iocs.map(ioc => (
+                        <div key={ioc} className="font-mono text-xs px-2 py-1 rounded" style={{ background: 'rgba(239,68,68,0.08)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.2)' }}>
+                          {ioc}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {alert.notes && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'hsl(215,15%,40%)' }}>
+                      <MessageSquare size={10} className="inline mr-1" />Investigation Notes
+                    </p>
+                    <div className="text-sm px-3 py-2 rounded-lg" style={{ background: 'hsl(222,40%,9%)', color: '#94a3b8', border: '1px solid hsl(222,22%,16%)' }}>
+                      {alert.notes}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  <span className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>Change status:</span>
+                  {statusOrder.filter(s => s !== alert.status).map(s => (
+                    <button
+                      key={s}
+                      onClick={(e) => { e.stopPropagation(); updateStatus(alert.id, s); }}
+                      className="px-3 py-1 rounded text-xs font-medium"
+                      style={{ background: `${statusColors[s]}15`, color: statusColors[s], border: `1px solid ${statusColors[s]}30` }}
+                    >
+                      → {statusLabels[s]}
+                    </button>
+                  ))}
+                  <div className="flex-1" />
+                  <button className="flex items-center gap-1.5 px-3 py-1 rounded text-xs" style={{ background: 'rgba(56,189,248,0.1)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.2)' }}>
+                    <ExternalLink size={11} /> View in Event Log
+                  </button>
+                </div>
+              </div>
+            )}
+          </Card>
+        ))}
       </div>
-    </Layout>
+    </div>
   );
-};
+}

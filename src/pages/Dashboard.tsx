@@ -1,278 +1,238 @@
-import React from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from 'react';
 import {
-  AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer
-} from "recharts";
-import { Activity, AlertTriangle, Monitor, Globe, Shield, Zap } from "lucide-react";
-import { Layout } from "../components/Layout";
-import { StatCard } from "../components/ui/StatCard";
-import { SeverityBadge } from "../components/ui/SeverityBadge";
-import { LiveDot } from "../components/ui/LiveDot";
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
 import {
-  dashboardStats, timelineData, securityEvents,
-  alerts
-} from "../data/mockData";
-import { format } from "date-fns";
+  Activity, AlertTriangle, Server, Database, TrendingUp, Clock, Eye
+} from 'lucide-react';
+import Card from '../components/ui/Card';
+import StatCard from '../components/ui/StatCard';
+import SeverityBadge from '../components/ui/SeverityBadge';
+import {
+  securityEvents, alerts, assets, threatIntel,
+  timelineData, getSeverityDistribution
+} from '../data';
 
-const SEVERITY_PIE = [
-  { name: "Critical", value: dashboardStats.criticalEvents, color: "hsl(0,85%,60%)" },
-  { name: "High", value: dashboardStats.highEvents, color: "hsl(25,95%,55%)" },
-  { name: "Medium", value: dashboardStats.mediumEvents, color: "hsl(45,95%,55%)" },
-  { name: "Low/Info", value: dashboardStats.lowEvents, color: "hsl(152,69%,46%)" },
-];
+const openAlerts = alerts.filter(a => a.status === 'open' || a.status === 'investigating').length;
+const onlineAssets = assets.filter(a => a.status === 'online').length;
+const activeIOCs = threatIntel.filter(t => t.active).length;
+const criticalEvents = securityEvents.filter(e => e.severity === 'critical').length;
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-lg border p-3 text-xs font-mono" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,22%)" }}>
-        <p className="text-slate-400 mb-1">{label}</p>
-        {payload.map((p: any) => (
-          <p key={p.name} style={{ color: p.color }}>{p.name}: {p.value}</p>
-        ))}
-      </div>
-    );
-  }
-  return null;
+const RADIAN = Math.PI / 180;
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return value > 0 ? (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="600">
+      {value}
+    </text>
+  ) : null;
 };
 
-export const Dashboard: React.FC = () => {
-  const recentEvents = securityEvents.slice(0, 8);
-  const openAlerts = alerts.filter(a => ["open", "investigating"].includes(a.status)).slice(0, 5);
+export default function Dashboard() {
+  const [ticker, setTicker] = useState(0);
+  const recentEvents = securityEvents.slice(0, 8 + ticker % 3);
+  const sevDist = getSeverityDistribution();
+
+  useEffect(() => {
+    const id = setInterval(() => setTicker(t => t + 1), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
 
   return (
-    <Layout title="Security Operations Center" subtitle="Real-time threat monitoring dashboard">
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Security Dashboard</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
+            Real-time security monitoring • Last updated: {new Date().toLocaleTimeString()}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
+          <span className="w-2 h-2 rounded-full pulse-dot" style={{ background: '#10b981' }} />
+          LIVE
+        </div>
+      </div>
+
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           title="Total Events (24h)"
-          value={dashboardStats.totalEvents}
-          icon={Activity}
-          iconColor="text-emerald-400"
-          iconBg="bg-emerald-500/10 border-emerald-500/20"
-          accentColor="from-emerald-500/8 to-transparent"
-          trend={{ value: 12, label: "vs yesterday" }}
-          delay={0}
+          value={securityEvents.length.toLocaleString()}
+          icon={<Activity size={20} />}
+          color="#38bdf8"
+          delta="12% from yesterday"
+          deltaUp={true}
         />
         <StatCard
           title="Active Alerts"
-          value={dashboardStats.activeAlerts}
-          icon={AlertTriangle}
-          iconColor="text-red-400"
-          iconBg="bg-red-500/10 border-red-500/20"
-          accentColor="from-red-500/8 to-transparent"
-          trend={{ value: 8, label: "vs last hour" }}
-          delay={0.05}
+          value={openAlerts}
+          icon={<AlertTriangle size={20} />}
+          color="#ef4444"
+          delta="3 new in last hour"
+          deltaUp={false}
         />
         <StatCard
           title="Online Assets"
-          value={dashboardStats.onlineAssets}
-          subtitle={`of ${dashboardStats.onlineAssets + 4} total assets`}
-          icon={Monitor}
-          iconColor="text-sky-400"
-          iconBg="bg-sky-500/10 border-sky-500/20"
-          accentColor="from-sky-500/8 to-transparent"
-          delay={0.1}
+          value={`${onlineAssets}/${assets.length}`}
+          icon={<Server size={20} />}
+          color="#10b981"
+          subtitle="2 warning, 1 offline"
         />
         <StatCard
           title="Threat Intel IOCs"
-          value={dashboardStats.threatIntelCount}
-          subtitle="Active indicators"
-          icon={Globe}
-          iconColor="text-purple-400"
-          iconBg="bg-purple-500/10 border-purple-500/20"
-          accentColor="from-purple-500/8 to-transparent"
-          delay={0.15}
+          value={activeIOCs}
+          icon={<Database size={20} />}
+          color="#a78bfa"
+          delta="2 new today"
+          deltaUp={false}
         />
       </div>
 
-      {/* Severity count row */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "Critical", count: dashboardStats.criticalEvents, color: "text-red-400", bg: "bg-red-400/5", bar: "bg-red-400", border: "border-red-400/15" },
-          { label: "High", count: dashboardStats.highEvents, color: "text-orange-400", bg: "bg-orange-400/5", bar: "bg-orange-400", border: "border-orange-400/15" },
-          { label: "Medium", count: dashboardStats.mediumEvents, color: "text-yellow-400", bg: "bg-yellow-400/5", bar: "bg-yellow-400", border: "border-yellow-400/15" },
-          { label: "Low / Info", count: dashboardStats.lowEvents, color: "text-emerald-400", bg: "bg-emerald-400/5", bar: "bg-emerald-400", border: "border-emerald-400/15" },
-        ].map(({ label, count, color, bg, bar, border }) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            className={`rounded-xl border px-4 py-3 ${bg} ${border}`}
-          >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] text-slate-500 uppercase tracking-widest">{label}</span>
-              <span className={`font-mono text-lg font-bold ${color}`}>{count}</span>
-            </div>
-            <div className="h-1 rounded-full bg-white/5">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(count / securityEvents.length) * 100}%` }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className={`h-full rounded-full ${bar}`}
-              />
-            </div>
-          </motion.div>
-        ))}
+      {/* Secondary stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.15)' }}>
+            <TrendingUp size={18} style={{ color: '#ef4444' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold font-mono" style={{ color: '#ef4444' }}>{criticalEvents}</p>
+            <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Critical Events Today</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)' }}>
+            <Clock size={18} style={{ color: '#10b981' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold font-mono" style={{ color: '#10b981' }}>4.2m</p>
+            <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Avg. Detection Time (MTTD)</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(56,189,248,0.15)' }}>
+            <Eye size={18} style={{ color: '#38bdf8' }} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold font-mono" style={{ color: '#38bdf8' }}>99.8%</p>
+            <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Sensor Coverage</p>
+          </div>
+        </Card>
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4">
         {/* Timeline Chart */}
-        <div className="lg:col-span-2 rounded-xl border p-5" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
+        <Card className="col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-200">Event Timeline (24h)</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Total vs Critical event frequency</p>
+              <h2 className="font-semibold" style={{ color: '#f1f5f9' }}>Event Timeline</h2>
+              <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Total vs Critical events over 24h</p>
             </div>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Total
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-red-400" /> Critical
-              </span>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-0.5 rounded" style={{ background: '#38bdf8' }} />
+                <span style={{ color: 'hsl(215,20%,60%)' }}>Total</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-0.5 rounded" style={{ background: '#ef4444' }} />
+                <span style={{ color: 'hsl(215,20%,60%)' }}>Critical</span>
+              </div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={timelineData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={timelineData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(152,69%,46%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(152,69%,46%)" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
                 </linearGradient>
-                <linearGradient id="criticalGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(0,85%,60%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(0,85%,60%)" stopOpacity={0} />
+                <linearGradient id="critGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222,25%,16%)" />
-              <XAxis dataKey="time" tick={{ fill: "hsl(215,20%,45%)", fontSize: 10 }} tickLine={false} axisLine={false} interval={3} />
-              <YAxis tick={{ fill: "hsl(215,20%,45%)", fontSize: 10 }} tickLine={false} axisLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="total" name="Total" stroke="hsl(152,69%,46%)" strokeWidth={2} fill="url(#totalGrad)" />
-              <Area type="monotone" dataKey="critical" name="Critical" stroke="hsl(0,85%,60%)" strokeWidth={2} fill="url(#criticalGrad)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="time" tick={{ fontSize: 10, fill: 'hsl(215,15%,40%)' }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(215,15%,40%)' }} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ background: 'hsl(222,35%,12%)', border: '1px solid hsl(222,25%,20%)', borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: '#f1f5f9' }}
+                itemStyle={{ color: '#94a3b8' }}
+              />
+              <Area type="monotone" dataKey="total" stroke="#38bdf8" fill="url(#totalGrad)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="critical" stroke="#ef4444" fill="url(#critGrad)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </Card>
 
         {/* Severity Donut */}
-        <div className="rounded-xl border p-5" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-          <h3 className="text-sm font-semibold text-slate-200 mb-1">Severity Distribution</h3>
-          <p className="text-xs text-slate-500 mb-3">Event breakdown by severity</p>
+        <Card className="p-5">
+          <h2 className="font-semibold mb-1" style={{ color: '#f1f5f9' }}>Severity Distribution</h2>
+          <p className="text-xs mb-3" style={{ color: 'hsl(215,15%,45%)' }}>Events by severity level</p>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
               <Pie
-                data={SEVERITY_PIE}
+                data={sevDist}
                 cx="50%"
                 cy="50%"
-                innerRadius={48}
-                outerRadius={72}
-                paddingAngle={3}
+                innerRadius={45}
+                outerRadius={70}
+                paddingAngle={2}
                 dataKey="value"
+                labelLine={false}
+                label={renderCustomLabel}
               >
-                {SEVERITY_PIE.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} stroke="none" />
-                ))}
+                {sevDist.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
               </Pie>
-              <Tooltip
-                contentStyle={{ background: "hsl(222,35%,11%)", border: "1px solid hsl(222,25%,22%)", borderRadius: 8, fontSize: 12 }}
-                itemStyle={{ color: "hsl(210,40%,80%)" }}
-              />
             </PieChart>
           </ResponsiveContainer>
-          <div className="space-y-2 mt-2">
-            {SEVERITY_PIE.map(item => (
-              <div key={item.name} className="flex items-center justify-between text-xs">
+          <div className="space-y-1.5 mt-1">
+            {sevDist.map(s => (
+              <div key={s.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                  <span className="text-slate-400">{item.name}</span>
+                  <div className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
+                  <span style={{ color: 'hsl(215,20%,60%)' }}>{s.name}</span>
                 </div>
-                <span className="font-mono text-slate-300">{item.value}</span>
+                <span className="font-mono font-semibold" style={{ color: '#f1f5f9' }}>{s.value}</span>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Events */}
-        <div className="rounded-xl border p-5" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-slate-200">Recent Events</h3>
-              <LiveDot size="sm" />
+      {/* Recent Events */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold" style={{ color: '#f1f5f9' }}>Recent Events</h2>
+          <span className="text-xs font-mono" style={{ color: '#10b981' }}>AUTO-REFRESHING</span>
+        </div>
+        <div className="space-y-2">
+          {recentEvents.map(evt => (
+            <div
+              key={evt.id}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs"
+              style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,16%)' }}
+            >
+              <SeverityBadge severity={evt.severity} size="sm" />
+              <span className="font-mono" style={{ color: 'hsl(215,15%,45%)', flexShrink: 0 }}>
+                {formatTime(evt.timestamp)}
+              </span>
+              <span className="font-medium" style={{ color: '#cbd5e1', flexShrink: 0 }}>{evt.type}</span>
+              <span className="flex-1 truncate" style={{ color: 'hsl(215,15%,45%)' }}>{evt.description}</span>
+              <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,38%)', flexShrink: 0 }}>{evt.sourceIp}</span>
             </div>
-            <span className="text-xs text-emerald-400 font-mono">LIVE</span>
-          </div>
-          <div className="space-y-2">
-            {recentEvents.map((evt, i) => (
-              <motion.div
-                key={evt.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-start gap-3 py-2 border-b last:border-0"
-                style={{ borderColor: "hsl(222,25%,16%)" }}
-              >
-                <SeverityBadge severity={evt.severity} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-slate-300 truncate">{evt.description}</p>
-                  <p className="text-[10px] text-slate-600 font-mono mt-0.5">{evt.host} · {evt.source}</p>
-                </div>
-                <span className="text-[10px] text-slate-600 font-mono flex-shrink-0">
-                  {format(evt.timestamp, "HH:mm")}
-                </span>
-              </motion.div>
-            ))}
-          </div>
+          ))}
         </div>
-
-        {/* Active Alerts */}
-        <div className="rounded-xl border p-5" style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-200">Active Alerts</h3>
-            <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "hsla(0,85%,60%,0.1)", color: "hsl(0,85%,60%)", border: "1px solid hsla(0,85%,60%,0.3)" }}>
-              {openAlerts.length} OPEN
-            </span>
-          </div>
-          <div className="space-y-2">
-            {openAlerts.map((alert, i) => (
-              <motion.div
-                key={alert.id}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-start gap-3 py-2.5 px-3 rounded-lg cursor-pointer hover:bg-white/3 transition-colors"
-                style={{ background: "hsl(222,35%,9%)" }}
-              >
-                <div className="flex-shrink-0 pt-0.5">
-                  {alert.severity === "critical" ? (
-                    <Zap size={14} className="text-red-400" />
-                  ) : (
-                    <Shield size={14} className="text-orange-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-200 truncate">{alert.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <SeverityBadge severity={alert.severity} size="sm" />
-                    <span className="text-[10px] text-slate-500 font-mono">{alert.mitreId}</span>
-                  </div>
-                </div>
-                <span className={`text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded uppercase ${
-                  alert.status === "investigating"
-                    ? "text-yellow-400 bg-yellow-400/10 border border-yellow-400/30"
-                    : "text-orange-400 bg-orange-400/10 border border-orange-400/30"
-                }`}>
-                  {alert.status}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </Layout>
+      </Card>
+    </div>
   );
-};
+}

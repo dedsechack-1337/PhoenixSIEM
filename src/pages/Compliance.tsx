@@ -1,161 +1,169 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckSquare, ChevronDown, ChevronRight, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { Layout } from "../components/Layout";
-import { complianceChecks, ComplianceStatus } from "../data/mockData";
-import { format } from "date-fns";
+import { useState } from 'react';
+import { CheckSquare, XCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import { complianceChecks, ComplianceStatus } from '../data';
 
-const frameworks = ["PCI-DSS", "CIS", "HIPAA", "NIST", "SOC2", "ISO27001"];
-
-const statusConfig: Record<ComplianceStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pass: { label: "Pass", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/25", icon: <CheckCircle size={12} /> },
-  fail: { label: "Fail", color: "text-red-400 bg-red-400/10 border-red-400/25", icon: <XCircle size={12} /> },
-  warning: { label: "Warning", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/25", icon: <AlertTriangle size={12} /> },
-  not_applicable: { label: "N/A", color: "text-slate-400 bg-slate-400/10 border-slate-700", icon: null },
-};
+const frameworks = ['PCI-DSS', 'CIS', 'HIPAA', 'NIST', 'SOC2', 'ISO27001'];
 
 const frameworkColors: Record<string, string> = {
-  "PCI-DSS": "text-purple-400 bg-purple-400/10 border-purple-400/20",
-  "CIS": "text-sky-400 bg-sky-400/10 border-sky-400/20",
-  "HIPAA": "text-pink-400 bg-pink-400/10 border-pink-400/20",
-  "NIST": "text-blue-400 bg-blue-400/10 border-blue-400/20",
-  "SOC2": "text-amber-400 bg-amber-400/10 border-amber-400/20",
-  "ISO27001": "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+  'PCI-DSS': '#f97316',
+  'CIS': '#38bdf8',
+  'HIPAA': '#a78bfa',
+  'NIST': '#10b981',
+  'SOC2': '#eab308',
+  'ISO27001': '#ec4899',
 };
 
-const getFrameworkScore = (fw: string) => {
-  const checks = complianceChecks.filter(c => c.framework === fw);
-  if (!checks.length) return 0;
-  return Math.round(checks.reduce((s, c) => s + c.score, 0) / checks.length);
+const statusConfig: Record<ComplianceStatus, { color: string; icon: any; label: string }> = {
+  pass:    { color: '#10b981', icon: CheckSquare, label: 'PASS' },
+  fail:    { color: '#ef4444', icon: XCircle, label: 'FAIL' },
+  warning: { color: '#eab308', icon: AlertTriangle, label: 'WARN' },
 };
 
-export const Compliance: React.FC = () => {
-  const [selectedFw, setSelectedFw] = useState<string>("all");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+export default function Compliance() {
+  const [activeFramework, setActiveFramework] = useState('all');
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const filtered = complianceChecks.filter(c => selectedFw === "all" || c.framework === selectedFw);
+  const filtered = complianceChecks.filter(c => activeFramework === 'all' || c.framework === activeFramework);
+
+  const getFrameworkScore = (fw: string) => {
+    const checks = complianceChecks.filter(c => c.framework === fw);
+    const passed = checks.filter(c => c.status === 'pass').length;
+    return checks.length > 0 ? Math.round((passed / checks.length) * 100) : 0;
+  };
+
+  const overallPassed = complianceChecks.filter(c => c.status === 'pass').length;
+  const overallScore = Math.round((overallPassed / complianceChecks.length) * 100);
+
+  const formatTs = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <Layout title="Compliance" subtitle="Multi-framework compliance monitoring and gap analysis">
-      {/* Framework scorecards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+    <div className="p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Compliance</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
+            {complianceChecks.filter(c => c.status === 'pass').length} passing · {complianceChecks.filter(c => c.status === 'fail').length} failing · {complianceChecks.filter(c => c.status === 'warning').length} warning
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-3xl font-bold font-mono" style={{ color: overallScore >= 70 ? '#10b981' : overallScore >= 50 ? '#eab308' : '#ef4444' }}>
+            {overallScore}%
+          </div>
+          <div className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Overall Compliance</div>
+        </div>
+      </div>
+
+      {/* Framework score cards */}
+      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
         {frameworks.map(fw => {
           const score = getFrameworkScore(fw);
+          const scoreColor = score >= 70 ? '#10b981' : score >= 50 ? '#eab308' : '#ef4444';
           const checks = complianceChecks.filter(c => c.framework === fw);
-          const passes = checks.filter(c => c.status === "pass").length;
-          const fails = checks.filter(c => c.status === "fail").length;
-          const fc = frameworkColors[fw];
-
+          const fails = checks.filter(c => c.status === 'fail').length;
           return (
-            <button
+            <Card
               key={fw}
-              onClick={() => setSelectedFw(selectedFw === fw ? "all" : fw)}
-              className={`rounded-xl border p-4 text-left transition-all hover:scale-105 ${
-                selectedFw === fw ? fc : "border-white/8 bg-white/3"
-              }`}
+              className="p-3 cursor-pointer"
+              hover
+              onClick={() => setActiveFramework(activeFramework === fw ? 'all' : fw)}
             >
-              <p className={`text-[10px] font-semibold uppercase tracking-widest mb-2 ${selectedFw === fw ? "" : "text-slate-500"}`}>{fw}</p>
-              <p className={`text-2xl font-bold font-mono mb-1 ${
-                score >= 80 ? "text-emerald-400" : score >= 60 ? "text-yellow-400" : "text-red-400"
-              }`}>{score}%</p>
-              <div className="h-1 rounded-full bg-white/5 mb-2">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${score}%`,
-                    background: score >= 80 ? "hsl(152,69%,46%)" : score >= 60 ? "hsl(45,95%,55%)" : "hsl(0,85%,60%)"
-                  }}
-                />
+              <div className="flex items-start justify-between mb-2">
+                <span
+                  className="text-[10px] font-bold"
+                  style={{ color: frameworkColors[fw] }}
+                >{fw}</span>
+                {activeFramework === fw && (
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#10b981' }} />
+                )}
               </div>
-              <div className="flex gap-2 text-[9px]">
-                <span className="text-emerald-400">{passes} pass</span>
-                <span className="text-red-400">{fails} fail</span>
+              <div className="text-2xl font-bold font-mono mb-1" style={{ color: scoreColor }}>{score}%</div>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(222,22%,20%)' }}>
+                <div className="h-full rounded-full" style={{ width: `${score}%`, background: scoreColor }} />
               </div>
-            </button>
+              {fails > 0 && (
+                <div className="text-[10px] mt-1.5" style={{ color: '#ef4444' }}>{fails} failing</div>
+              )}
+            </Card>
           );
         })}
       </div>
 
-      {/* Checks table */}
+      {/* Filter tabs */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setActiveFramework('all')}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium"
+          style={{
+            background: activeFramework === 'all' ? 'rgba(16,185,129,0.15)' : 'hsl(222,33%,14%)',
+            color: activeFramework === 'all' ? '#10b981' : 'hsl(215,15%,50%)',
+            border: `1px solid ${activeFramework === 'all' ? 'rgba(16,185,129,0.3)' : 'hsl(222,22%,20%)'}`,
+          }}
+        >All Frameworks</button>
+        {frameworks.map(fw => (
+          <button
+            key={fw}
+            onClick={() => setActiveFramework(activeFramework === fw ? 'all' : fw)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium"
+            style={{
+              background: activeFramework === fw ? `${frameworkColors[fw]}15` : 'hsl(222,33%,14%)',
+              color: activeFramework === fw ? frameworkColors[fw] : 'hsl(215,15%,50%)',
+              border: `1px solid ${activeFramework === fw ? `${frameworkColors[fw]}40` : 'hsl(222,22%,20%)'}`,
+            }}
+          >{fw}</button>
+        ))}
+      </div>
+
+      {/* Check list */}
       <div className="space-y-2">
         {filtered.map(check => {
-          const sc = statusConfig[check.status];
-          const isExpanded = expandedId === check.id;
-          const fc = frameworkColors[check.framework];
-
+          const cfg = statusConfig[check.status];
+          const Icon = cfg.icon;
+          const isExpanded = expanded === check.id;
           return (
-            <motion.div
-              key={check.id}
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="rounded-xl border overflow-hidden"
-              style={{ background: "hsl(222,35%,11%)", borderColor: "hsl(222,25%,18%)" }}
-            >
+            <Card key={check.id} className="overflow-hidden">
               <div
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/2 transition-colors"
-                onClick={() => setExpandedId(isExpanded ? null : check.id)}
+                className="flex items-center gap-3 p-3.5 cursor-pointer hover:opacity-90"
+                style={{ borderLeft: `3px solid ${cfg.color}` }}
+                onClick={() => setExpanded(isExpanded ? null : check.id)}
               >
-                <span className={`flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded border ${fc}`}>
-                  {check.framework}
-                </span>
-                <span className="font-mono text-[10px] text-slate-600 flex-shrink-0 w-24">{check.control}</span>
+                <Icon size={16} style={{ color: cfg.color, flexShrink: 0 }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-200 truncate">{check.title}</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {/* Score bar */}
-                  <div className="hidden lg:flex items-center gap-2 w-24">
-                    <div className="flex-1 h-1.5 rounded-full bg-white/5">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${check.score}%`,
-                          background: check.score >= 80 ? "hsl(152,69%,46%)" : check.score >= 60 ? "hsl(45,95%,55%)" : "hsl(0,85%,60%)"
-                        }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-500">{check.score}%</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge color={frameworkColors[check.framework]} className="text-[10px]">{check.framework}</Badge>
+                    <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{check.controlId}</span>
+                    <span className="text-xs font-semibold" style={{ color: '#f1f5f9' }}>{check.title}</span>
                   </div>
-                  <span className={`flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded border ${sc.color}`}>
-                    {sc.icon} {sc.label}
-                  </span>
-                  {isExpanded ? <ChevronDown size={14} className="text-slate-500" /> : <ChevronRight size={14} className="text-slate-600" />}
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span
+                    className="text-[10px] font-mono font-bold px-2 py-0.5 rounded"
+                    style={{ background: `${cfg.color}15`, color: cfg.color, border: `1px solid ${cfg.color}30` }}
+                  >{cfg.label}</span>
+                  <span className="text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{formatTs(check.lastChecked)}</span>
+                  {isExpanded ? <ChevronUp size={14} style={{ color: 'hsl(215,15%,40%)' }} /> : <ChevronDown size={14} style={{ color: 'hsl(215,15%,40%)' }} />}
                 </div>
               </div>
-
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden border-t"
-                    style={{ borderColor: "hsl(222,25%,16%)" }}
-                  >
-                    <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4" style={{ background: "hsl(222,35%,9%)" }}>
-                      <div>
-                        <p className="text-[10px] text-slate-600 uppercase tracking-widest mb-1">Description</p>
-                        <p className="text-xs text-slate-400 leading-relaxed">{check.description}</p>
-                      </div>
-                      {check.remediation && (
-                        <div>
-                          <p className="text-[10px] text-yellow-600 uppercase tracking-widest mb-1">Remediation Steps</p>
-                          <p className="text-xs text-yellow-400/80 leading-relaxed">{check.remediation}</p>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-[10px] text-slate-600 font-mono">
-                        <CheckSquare size={10} /> Last checked: {format(check.lastChecked, "MMM d, HH:mm")}
-                      </div>
+              {isExpanded && (
+                <div className="px-4 pb-4 pt-2 space-y-2" style={{ borderTop: '1px solid hsl(222,22%,14%)' }}>
+                  <p className="text-xs" style={{ color: '#94a3b8' }}>{check.description}</p>
+                  {check.status !== 'pass' && (
+                    <div className="text-xs px-3 py-2 rounded-lg" style={{ background: `${cfg.color}08`, border: `1px solid ${cfg.color}20`, color: cfg.color }}>
+                      <strong>Remediation:</strong> {check.remediation}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                  )}
+                  {check.affectedAssets > 0 && (
+                    <p className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>
+                      Affects <strong style={{ color: '#f1f5f9' }}>{check.affectedAssets}</strong> asset{check.affectedAssets !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+              )}
+            </Card>
           );
         })}
       </div>
-    </Layout>
+    </div>
   );
-};
+}
