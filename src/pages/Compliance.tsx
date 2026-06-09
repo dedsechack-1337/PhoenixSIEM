@@ -1,169 +1,157 @@
+import { Card, CardHeader } from '../components/ui/Card';
+import { complianceChecks, Framework, CheckStatus } from '../data/mockData';
+import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
-import { CheckSquare, XCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import { complianceChecks, ComplianceStatus } from '../data';
+import { formatDistanceToNow } from 'date-fns';
 
-const frameworks = ['PCI-DSS', 'CIS', 'HIPAA', 'NIST', 'SOC2', 'ISO27001'];
+const frameworks: Framework[] = ['PCI-DSS', 'CIS', 'HIPAA', 'NIST', 'SOC2', 'ISO27001'];
 
-const frameworkColors: Record<string, string> = {
-  'PCI-DSS': '#f97316',
-  'CIS': '#38bdf8',
-  'HIPAA': '#a78bfa',
-  'NIST': '#10b981',
-  'SOC2': '#eab308',
-  'ISO27001': '#ec4899',
+const frameworkInfo: Record<Framework, { description: string; color: string }> = {
+  'PCI-DSS': { description: 'Payment Card Industry Data Security Standard', color: 'text-blue-400 border-blue-500/30 bg-blue-500/10' },
+  'CIS': { description: 'Center for Internet Security Controls', color: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10' },
+  'HIPAA': { description: 'Health Insurance Portability & Accountability Act', color: 'text-purple-400 border-purple-500/30 bg-purple-500/10' },
+  'NIST': { description: 'NIST Cybersecurity Framework', color: 'text-orange-400 border-orange-500/30 bg-orange-500/10' },
+  'SOC2': { description: 'Service Organization Control 2', color: 'text-green-400 border-green-500/30 bg-green-500/10' },
+  'ISO27001': { description: 'ISO/IEC 27001 Information Security', color: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' },
 };
 
-const statusConfig: Record<ComplianceStatus, { color: string; icon: any; label: string }> = {
-  pass:    { color: '#10b981', icon: CheckSquare, label: 'PASS' },
-  fail:    { color: '#ef4444', icon: XCircle, label: 'FAIL' },
-  warning: { color: '#eab308', icon: AlertTriangle, label: 'WARN' },
+const statusConfig: Record<CheckStatus, { icon: typeof CheckCircle; color: string; label: string }> = {
+  pass: { icon: CheckCircle, color: 'text-green-400', label: 'Pass' },
+  fail: { icon: XCircle, color: 'text-red-400', label: 'Fail' },
+  warning: { icon: AlertTriangle, color: 'text-yellow-400', label: 'Warning' },
 };
 
-export default function Compliance() {
-  const [activeFramework, setActiveFramework] = useState('all');
+function frameworkScore(fw: Framework) {
+  const checks = complianceChecks.filter((c) => c.framework === fw);
+  const pass = checks.filter((c) => c.status === 'pass').length;
+  return { total: checks.length, pass, pct: Math.round((pass / checks.length) * 100) };
+}
+
+export function Compliance() {
+  const [activeFramework, setActiveFramework] = useState<Framework | 'all'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const filtered = complianceChecks.filter(c => activeFramework === 'all' || c.framework === activeFramework);
+  const filtered = activeFramework === 'all' ? complianceChecks : complianceChecks.filter((c) => c.framework === activeFramework);
 
-  const getFrameworkScore = (fw: string) => {
-    const checks = complianceChecks.filter(c => c.framework === fw);
-    const passed = checks.filter(c => c.status === 'pass').length;
-    return checks.length > 0 ? Math.round((passed / checks.length) * 100) : 0;
-  };
-
-  const overallPassed = complianceChecks.filter(c => c.status === 'pass').length;
-  const overallScore = Math.round((overallPassed / complianceChecks.length) * 100);
-
-  const formatTs = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const overallPass = complianceChecks.filter((c) => c.status === 'pass').length;
+  const overallPct = Math.round((overallPass / complianceChecks.length) * 100);
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Compliance</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
-            {complianceChecks.filter(c => c.status === 'pass').length} passing · {complianceChecks.filter(c => c.status === 'fail').length} failing · {complianceChecks.filter(c => c.status === 'warning').length} warning
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold font-mono" style={{ color: overallScore >= 70 ? '#10b981' : overallScore >= 50 ? '#eab308' : '#ef4444' }}>
-            {overallScore}%
+    <div className="space-y-5">
+      {/* Overall Score */}
+      <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[#1a3050] bg-[#0d1f35]">
+        <div className="relative w-16 h-16">
+          <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1a3050" strokeWidth="3" />
+            <circle
+              cx="18" cy="18" r="15.9" fill="none"
+              stroke={overallPct >= 80 ? '#22c55e' : overallPct >= 60 ? '#eab308' : '#ef4444'}
+              strokeWidth="3"
+              strokeDasharray={`${overallPct} ${100 - overallPct}`}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-sm font-bold text-white">{overallPct}%</span>
           </div>
-          <div className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Overall Compliance</div>
+        </div>
+        <div>
+          <div className="text-base font-semibold text-white">Overall Compliance Score</div>
+          <div className="text-xs text-[#94a3b8] mt-0.5">{overallPass}/{complianceChecks.length} controls passing across all frameworks</div>
         </div>
       </div>
 
-      {/* Framework score cards */}
-      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
-        {frameworks.map(fw => {
-          const score = getFrameworkScore(fw);
-          const scoreColor = score >= 70 ? '#10b981' : score >= 50 ? '#eab308' : '#ef4444';
-          const checks = complianceChecks.filter(c => c.framework === fw);
-          const fails = checks.filter(c => c.status === 'fail').length;
+      {/* Framework Score Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        {frameworks.map((fw) => {
+          const { total, pass, pct } = frameworkScore(fw);
+          const { color } = frameworkInfo[fw];
           return (
-            <Card
+            <button
               key={fw}
-              className="p-3 cursor-pointer"
-              hover
               onClick={() => setActiveFramework(activeFramework === fw ? 'all' : fw)}
+              className={`rounded-xl border p-4 text-left transition-all ${
+                activeFramework === fw ? color : 'border-[#1a3050] bg-[#0d1f35] hover:border-orange-500/30'
+              }`}
             >
-              <div className="flex items-start justify-between mb-2">
-                <span
-                  className="text-[10px] font-bold"
-                  style={{ color: frameworkColors[fw] }}
-                >{fw}</span>
-                {activeFramework === fw && (
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#10b981' }} />
-                )}
+              <div className="text-sm font-bold text-white">{fw}</div>
+              <div className="text-xl font-bold mt-1 text-white">{pct}%</div>
+              <div className="text-[10px] text-[#475569] mt-1">{pass}/{total} passing</div>
+              <div className="mt-2 h-1.5 bg-black/20 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${pct}%` }}
+                />
               </div>
-              <div className="text-2xl font-bold font-mono mb-1" style={{ color: scoreColor }}>{score}%</div>
-              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(222,22%,20%)' }}>
-                <div className="h-full rounded-full" style={{ width: `${score}%`, background: scoreColor }} />
-              </div>
-              {fails > 0 && (
-                <div className="text-[10px] mt-1.5" style={{ color: '#ef4444' }}>{fails} failing</div>
-              )}
-            </Card>
+            </button>
           );
         })}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          onClick={() => setActiveFramework('all')}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium"
-          style={{
-            background: activeFramework === 'all' ? 'rgba(16,185,129,0.15)' : 'hsl(222,33%,14%)',
-            color: activeFramework === 'all' ? '#10b981' : 'hsl(215,15%,50%)',
-            border: `1px solid ${activeFramework === 'all' ? 'rgba(16,185,129,0.3)' : 'hsl(222,22%,20%)'}`,
-          }}
-        >All Frameworks</button>
-        {frameworks.map(fw => (
-          <button
-            key={fw}
-            onClick={() => setActiveFramework(activeFramework === fw ? 'all' : fw)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{
-              background: activeFramework === fw ? `${frameworkColors[fw]}15` : 'hsl(222,33%,14%)',
-              color: activeFramework === fw ? frameworkColors[fw] : 'hsl(215,15%,50%)',
-              border: `1px solid ${activeFramework === fw ? `${frameworkColors[fw]}40` : 'hsl(222,22%,20%)'}`,
-            }}
-          >{fw}</button>
-        ))}
-      </div>
-
-      {/* Check list */}
-      <div className="space-y-2">
-        {filtered.map(check => {
-          const cfg = statusConfig[check.status];
-          const Icon = cfg.icon;
-          const isExpanded = expanded === check.id;
-          return (
-            <Card key={check.id} className="overflow-hidden">
-              <div
-                className="flex items-center gap-3 p-3.5 cursor-pointer hover:opacity-90"
-                style={{ borderLeft: `3px solid ${cfg.color}` }}
-                onClick={() => setExpanded(isExpanded ? null : check.id)}
-              >
-                <Icon size={16} style={{ color: cfg.color, flexShrink: 0 }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge color={frameworkColors[check.framework]} className="text-[10px]">{check.framework}</Badge>
-                    <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{check.controlId}</span>
-                    <span className="text-xs font-semibold" style={{ color: '#f1f5f9' }}>{check.title}</span>
+      {/* Controls Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-white">
+              Compliance Controls ({filtered.length})
+            </h3>
+            <div className="flex gap-2">
+              <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-1 rounded font-mono">
+                ✓ {filtered.filter((c) => c.status === 'pass').length} Pass
+              </span>
+              <span className="text-[10px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-1 rounded font-mono">
+                ⚠ {filtered.filter((c) => c.status === 'warning').length} Warning
+              </span>
+              <span className="text-[10px] text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-1 rounded font-mono">
+                ✗ {filtered.filter((c) => c.status === 'fail').length} Fail
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <div className="divide-y divide-[#0a1628]">
+          {filtered.map((check) => {
+            const { icon: StatusIcon, color, label } = statusConfig[check.status];
+            const isExp = expanded === check.id;
+            return (
+              <div key={check.id}>
+                <div
+                  className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-[#0a1628] transition-colors"
+                  onClick={() => setExpanded(isExp ? null : check.id)}
+                >
+                  <StatusIcon className={`w-4 h-4 flex-shrink-0 ${color}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${frameworkInfo[check.framework].color}`}>{check.framework}</span>
+                      <span className="text-[10px] font-mono text-[#475569]">{check.control}</span>
+                      <span className="text-sm text-white">{check.title}</span>
+                    </div>
+                    <div className="text-[10px] text-[#475569] mt-0.5">{check.description}</div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`text-[10px] font-mono ${color}`}>{label}</span>
+                    <span className="text-[10px] text-[#475569]">{formatDistanceToNow(check.lastChecked, { addSuffix: true })}</span>
+                    {isExp ? <ChevronUp className="w-3.5 h-3.5 text-[#475569]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#475569]" />}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span
-                    className="text-[10px] font-mono font-bold px-2 py-0.5 rounded"
-                    style={{ background: `${cfg.color}15`, color: cfg.color, border: `1px solid ${cfg.color}30` }}
-                  >{cfg.label}</span>
-                  <span className="text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{formatTs(check.lastChecked)}</span>
-                  {isExpanded ? <ChevronUp size={14} style={{ color: 'hsl(215,15%,40%)' }} /> : <ChevronDown size={14} style={{ color: 'hsl(215,15%,40%)' }} />}
-                </div>
+                {isExp && check.remediation && (
+                  <div className="bg-[#080f1e] border-t border-[#1a3050] px-6 py-3">
+                    <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-1">Remediation Steps</div>
+                    <p className="text-xs text-[#94a3b8]">{check.remediation}</p>
+                    {check.affectedHosts.length > 0 && (
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="text-[10px] text-[#475569]">Affected:</span>
+                        {check.affectedHosts.map((h) => (
+                          <span key={h} className="font-mono text-[10px] text-orange-300 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded">{h}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              {isExpanded && (
-                <div className="px-4 pb-4 pt-2 space-y-2" style={{ borderTop: '1px solid hsl(222,22%,14%)' }}>
-                  <p className="text-xs" style={{ color: '#94a3b8' }}>{check.description}</p>
-                  {check.status !== 'pass' && (
-                    <div className="text-xs px-3 py-2 rounded-lg" style={{ background: `${cfg.color}08`, border: `1px solid ${cfg.color}20`, color: cfg.color }}>
-                      <strong>Remediation:</strong> {check.remediation}
-                    </div>
-                  )}
-                  {check.affectedAssets > 0 && (
-                    <p className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>
-                      Affects <strong style={{ color: '#f1f5f9' }}>{check.affectedAssets}</strong> asset{check.affectedAssets !== 1 ? 's' : ''}
-                    </p>
-                  )}
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }

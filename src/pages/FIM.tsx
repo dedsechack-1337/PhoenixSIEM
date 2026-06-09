@@ -1,173 +1,170 @@
 import { useState } from 'react';
-import { FileCheck, CheckCircle, ShieldOff } from 'lucide-react';
-import Card from '../components/ui/Card';
-import SeverityBadge from '../components/ui/SeverityBadge';
-import Badge from '../components/ui/Badge';
-import { fimEvents, FIMAction } from '../data';
+import { FolderSearch, CheckCircle, XCircle, AlertTriangle, Plus, Minus, Edit, Trash2 } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
+import { SeverityBadge } from '../components/ui/SeverityBadge';
+import { fimEvents, FIMEvent, FIMChangeType } from '../data/mockData';
+import { formatDistanceToNow } from 'date-fns';
 
-const actionColors: Record<FIMAction, string> = {
-  modified: '#f97316',
-  created: '#10b981',
-  deleted: '#ef4444',
-  permission_changed: '#eab308',
-  owner_changed: '#a78bfa',
+const changeTypeConfig: Record<FIMChangeType, { icon: typeof Plus; color: string; label: string }> = {
+  created: { icon: Plus, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', label: 'Created' },
+  modified: { icon: Edit, color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', label: 'Modified' },
+  deleted: { icon: Trash2, color: 'text-red-400 bg-red-500/10 border-red-500/30', label: 'Deleted' },
+  permission_changed: { icon: AlertTriangle, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', label: 'Perm Changed' },
+  owner_changed: { icon: AlertTriangle, color: 'text-purple-400 bg-purple-500/10 border-purple-500/30', label: 'Owner Changed' },
 };
 
-export default function FIM() {
-  const [events, setEvents] = useState(fimEvents);
-  const [filter, setFilter] = useState<FIMAction | 'all'>('all');
+export function FIM() {
+  const [events, setEvents] = useState<FIMEvent[]>(fimEvents);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const acknowledge = (id: string) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, acknowledged: true } : e));
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, acknowledged: true } : e)));
   };
 
   const whitelist = (id: string) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, whitelisted: true, acknowledged: true } : e));
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, whitelisted: true, acknowledged: true } : e)));
   };
 
-  const filtered = events.filter(e => filter === 'all' || e.action === filter);
-
-  const counts = {
-    total: events.length,
-    critical: events.filter(e => e.severity === 'critical').length,
-    unacked: events.filter(e => !e.acknowledged).length,
-    whitelisted: events.filter(e => e.whitelisted).length,
-  };
-
-  const formatTs = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const unacknowledged = events.filter((e) => !e.acknowledged).length;
+  const critical = events.filter((e) => e.severity === 'critical').length;
+  const whitelisted = events.filter((e) => e.whitelisted).length;
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>File Integrity Monitoring</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
-            Real-time detection of unauthorized file system changes
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
-          <FileCheck size={14} />
-          {counts.unacked} Unacknowledged
-        </div>
-      </div>
-
+    <div className="space-y-5">
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Changes', value: counts.total, color: '#38bdf8' },
-          { label: 'Critical Changes', value: counts.critical, color: '#ef4444' },
-          { label: 'Needs Review', value: counts.unacked, color: '#f97316' },
-          { label: 'Whitelisted', value: counts.whitelisted, color: '#10b981' },
-        ].map(s => (
-          <Card key={s.label} className="p-4 flex items-center gap-3">
-            <span className="text-2xl font-bold font-mono" style={{ color: s.color }}>{s.value}</span>
-            <span className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>{s.label}</span>
+          { label: 'Total Events', value: events.length, color: 'text-white' },
+          { label: 'Unacknowledged', value: unacknowledged, color: 'text-red-400' },
+          { label: 'Critical Changes', value: critical, color: 'text-orange-400' },
+          { label: 'Whitelisted', value: whitelisted, color: 'text-green-400' },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardBody className="py-4">
+              <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+            </CardBody>
           </Card>
         ))}
       </div>
 
-      {/* Action filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {(['all', 'modified', 'created', 'deleted', 'permission_changed', 'owner_changed'] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium"
-            style={{
-              background: filter === f ? (f === 'all' ? 'rgba(16,185,129,0.15)' : `${actionColors[f]}15`) : 'hsl(222,33%,14%)',
-              color: filter === f ? (f === 'all' ? '#10b981' : actionColors[f]) : 'hsl(215,15%,50%)',
-              border: `1px solid ${filter === f ? (f === 'all' ? 'rgba(16,185,129,0.3)' : `${actionColors[f]}40`) : 'hsl(222,22%,20%)'}`,
-            }}
-          >{f === 'all' ? 'All Actions' : f.replace('_', ' ')}</button>
-        ))}
+      {/* Critical Paths Banner */}
+      <div className="px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/5">
+        <div className="flex items-center gap-2 mb-2">
+          <AlertTriangle className="w-4 h-4 text-red-400" />
+          <span className="text-sm font-semibold text-red-400">Critical Path Monitoring</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {['/etc/passwd', '/etc/sudoers', '/etc/ssh/sshd_config', '/root/.ssh/', 'C:\\Windows\\System32\\', 'C:\\Users\\*\\Startup\\'].map((p) => (
+            <span key={p} className="font-mono text-[11px] px-2 py-0.5 rounded bg-red-500/10 border border-red-500/30 text-red-300">{p}</span>
+          ))}
+        </div>
       </div>
 
-      {/* FIM Events */}
-      <div className="space-y-3">
-        {filtered.map(evt => (
-          <Card
-            key={evt.id}
-            className={`overflow-hidden ${evt.whitelisted ? 'opacity-50' : ''}`}
-          >
-            <div className="p-4 space-y-3" style={{ borderLeft: `3px solid ${actionColors[evt.action]}` }}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <SeverityBadge severity={evt.severity} size="sm" />
-                  <Badge color={actionColors[evt.action]} className="text-[10px] capitalize flex-shrink-0">
-                    {evt.action.replace('_', ' ')}
-                  </Badge>
+      {/* Events Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-white">File Integrity Events</h3>
+              <p className="text-xs text-[#475569] mt-0.5">Real-time file system change detection</p>
+            </div>
+            <FolderSearch className="w-4 h-4 text-[#475569]" />
+          </div>
+        </CardHeader>
+        <div className="divide-y divide-[#0a1628]">
+          {events.map((evt) => {
+            const { icon: ChangeIcon, color, label } = changeTypeConfig[evt.changeType];
+            const isExpanded = expanded === evt.id;
+
+            return (
+              <div key={evt.id} className={`transition-colors ${evt.whitelisted ? 'opacity-50' : ''}`}>
+                <div
+                  className="flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-[#0a1628]"
+                  onClick={() => setExpanded(isExpanded ? null : evt.id)}
+                >
+                  <SeverityBadge severity={evt.severity} className="mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-mono text-xs font-semibold truncate" style={{ color: '#f1f5f9' }}>{evt.path}</div>
-                    <div className="flex items-center gap-3 mt-1 text-xs flex-wrap" style={{ color: 'hsl(215,15%,45%)' }}>
-                      <span>Host: <strong style={{ color: '#38bdf8' }}>{evt.host}</strong></span>
-                      <span>User: <strong style={{ color: '#a78bfa' }}>{evt.user}</strong></span>
-                      <span>{formatTs(evt.timestamp)}</span>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="font-mono text-xs text-white">{evt.path}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-mono font-medium ${color}`}>
+                            <ChangeIcon className="w-3 h-3" />
+                            {label}
+                          </span>
+                          <span className="text-[10px] font-mono text-[#94a3b8]">{evt.host}</span>
+                          <span className="text-[#1a3050]">·</span>
+                          <span className="text-[10px] text-[#475569]">user: {evt.user}</span>
+                          <span className="text-[#1a3050]">·</span>
+                          <span className="text-[10px] text-[#475569]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {evt.whitelisted ? (
+                          <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded font-mono">WHITELISTED</span>
+                        ) : evt.acknowledged ? (
+                          <span className="text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded font-mono">ACK</span>
+                        ) : (
+                          <span className="text-[10px] text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded font-mono animate-pulse">NEW</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {evt.whitelisted ? (
-                    <Badge color="#6b7280">Whitelisted</Badge>
-                  ) : evt.acknowledged ? (
-                    <Badge color="#10b981">Acknowledged</Badge>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => acknowledge(evt.id)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs"
-                        style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}
-                      >
-                        <CheckCircle size={12} /> Acknowledge
-                      </button>
-                      <button
-                        onClick={() => whitelist(evt.id)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs"
-                        style={{ background: 'rgba(107,114,128,0.1)', border: '1px solid rgba(107,114,128,0.3)', color: '#9ca3af' }}
-                      >
-                        <ShieldOff size={12} /> Whitelist
-                      </button>
-                    </>
-                  )}
-                </div>
+
+                {isExpanded && (
+                  <div className="bg-[#080f1e] border-t border-[#1a3050] px-5 py-4 space-y-3">
+                    {/* Hash Diff */}
+                    {(evt.hashOld || evt.hashNew) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {evt.hashOld && (
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Minus className="w-3 h-3 text-red-400" />
+                              <span className="text-[10px] uppercase text-[#475569] tracking-wider">MD5 Before</span>
+                            </div>
+                            <div className="font-mono text-xs text-red-300 bg-red-500/5 border border-red-500/20 rounded px-3 py-2 break-all">{evt.hashOld}</div>
+                          </div>
+                        )}
+                        {evt.hashNew && (
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Plus className="w-3 h-3 text-green-400" />
+                              <span className="text-[10px] uppercase text-[#475569] tracking-wider">MD5 After</span>
+                            </div>
+                            <div className="font-mono text-xs text-green-300 bg-green-500/5 border border-green-500/20 rounded px-3 py-2 break-all">{evt.hashNew}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    {!evt.whitelisted && (
+                      <div className="flex gap-2">
+                        {!evt.acknowledged && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); acknowledge(evt.id); }}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-lg text-xs hover:bg-blue-500/20 transition-colors"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Acknowledge
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); whitelist(evt.id); }}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-xs hover:bg-green-500/20 transition-colors"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Whitelist Path
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {/* Hash diff */}
-              {(evt.oldHash || evt.newHash) && (
-                <div className="grid grid-cols-2 gap-3">
-                  {evt.oldHash && (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'hsl(215,15%,40%)' }}>Previous MD5</div>
-                      <div className="font-mono text-xs px-2 py-1.5 rounded" style={{ background: 'rgba(239,68,68,0.08)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.15)' }}>
-                        {evt.oldHash}
-                      </div>
-                    </div>
-                  )}
-                  {evt.newHash && (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'hsl(215,15%,40%)' }}>Current MD5</div>
-                      <div className="font-mono text-xs px-2 py-1.5 rounded" style={{ background: 'rgba(16,185,129,0.08)', color: '#86efac', border: '1px solid rgba(16,185,129,0.15)' }}>
-                        {evt.newHash}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Permissions */}
-              {(evt.oldPermissions || evt.newPermissions) && (
-                <div className="flex items-center gap-4 text-xs font-mono">
-                  {evt.oldPermissions && (
-                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>Before: </span><span style={{ color: '#fca5a5' }}>{evt.oldPermissions}</span></div>
-                  )}
-                  {evt.newPermissions && (
-                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>After: </span><span style={{ color: '#86efac' }}>{evt.newPermissions}</span></div>
-                  )}
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }

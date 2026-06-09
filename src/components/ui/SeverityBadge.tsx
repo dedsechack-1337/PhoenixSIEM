@@ -1,20 +1,18 @@
-import { Severity, severityConfig } from '../../data';
+import type { Severity } from '../../data/mockData';
 
-interface Props {
-  severity: Severity;
-  size?: 'sm' | 'md';
-}
+const config: Record<Severity, { label: string; classes: string }> = {
+  critical: { label: 'CRITICAL', classes: 'bg-red-500/20 text-red-400 border border-red-500/40' },
+  high:     { label: 'HIGH',     classes: 'bg-orange-500/20 text-orange-400 border border-orange-500/40' },
+  medium:   { label: 'MEDIUM',   classes: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' },
+  low:      { label: 'LOW',      classes: 'bg-green-500/20 text-green-400 border border-green-500/40' },
+  info:     { label: 'INFO',     classes: 'bg-blue-500/20 text-blue-400 border border-blue-500/40' },
+};
 
-export default function SeverityBadge({ severity, size = 'md' }: Props) {
-  const cfg = severityConfig[severity];
-  const px = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs';
+export function SeverityBadge({ severity, className = '' }: { severity: Severity; className?: string }) {
+  const { label, classes } = config[severity];
   return (
-    <span
-      className={`${px} rounded font-mono font-semibold tracking-wider inline-flex items-center gap-1`}
-      style={{ color: cfg.color, backgroundColor: cfg.bg, border: `1px solid ${cfg.color}30` }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: cfg.color }} />
-      {cfg.label}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wider ${classes} ${className}`}>
+      {label}
     </span>
   );
 }

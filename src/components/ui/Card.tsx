@@ -1,24 +1,17 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  glow?: boolean;
-  hover?: boolean;
-  onClick?: () => void;
-}
-
-export default function Card({ children, className = '', glow = false, hover = false, onClick }: CardProps) {
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      onClick={onClick}
-      className={`rounded-xl border ${hover ? 'card-hover' : ''} ${glow ? 'glow-emerald' : ''} ${className}`}
-      style={{
-        background: 'hsl(222, 33%, 14%)',
-        borderColor: 'hsl(222, 25%, 20%)',
-      }}
-    >
+    <div className={`rounded-xl border border-[#1a3050] bg-[#0d1f35] ${className}`}>
       {children}
     </div>
   );
+}
+
+export function CardHeader({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`px-5 py-4 border-b border-[#1a3050] ${className}`}>{children}</div>;
+}
+
+export function CardBody({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`px-5 py-4 ${className}`}>{children}</div>;
 }

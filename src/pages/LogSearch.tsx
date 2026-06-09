@@ -1,185 +1,156 @@
 import { useState } from 'react';
-import { Search, Clock, FileText, Zap } from 'lucide-react';
-import Card from '../components/ui/Card';
-import SeverityBadge from '../components/ui/SeverityBadge';
-import { securityEvents } from '../data';
+import { Search, Clock, Terminal, AlertCircle, ChevronRight } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
+import { securityEvents } from '../data/mockData';
+import { format } from 'date-fns';
+import { SeverityBadge } from '../components/ui/SeverityBadge';
 
-const savedSearches = [
-  { label: 'Critical events last hour', query: 'severity:critical' },
-  { label: 'SQL injection attempts', query: 'sql injection' },
-  { label: 'Failed auth events', query: 'failed authentication' },
-  { label: 'Lateral movement', query: 'lateral movement' },
-  { label: 'Data exfil events', query: 'exfil' },
-  { label: 'Ransomware indicators', query: 'ransomware' },
+const quickFilters = [
+  { label: 'Critical Events', query: 'severity:critical' },
+  { label: 'SSH Brute Force', query: 'brute force ssh' },
+  { label: 'Malware Detected', query: 'malware beacon' },
+  { label: 'Data Exfiltration', query: 'exfil 4.2 GB' },
+  { label: 'Admin Activity', query: 'admin root SYSTEM' },
+  { label: 'External IPs', query: '185.220 91.195 45.33' },
 ];
 
-const sourceSuggestions = ['ext-fw-01', 'auth-srv-01', 'edr-agent', 'ndr-01', 'dlp-01', 'waf-01', 'ids-01'];
-
-export default function LogSearch() {
+export function LogSearch() {
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState('');
-  const [timeRange, setTimeRange] = useState('24h');
   const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState(securityEvents.slice(0, 5));
 
-  const runSearch = (q: string) => {
-    setQuery(q);
+  const doSearch = (q: string) => {
+    if (!q.trim()) return;
     setLoading(true);
+    setSubmitted(q);
     setTimeout(() => {
-      setSubmitted(q);
+      const terms = q.toLowerCase().replace('severity:', '').split(' ').filter(Boolean);
+      const res = securityEvents.filter((e) =>
+        terms.some((t) =>
+          [e.raw, e.description, e.source, e.host, e.severity, e.type, e.user ?? ''].some((f) =>
+            f.toLowerCase().includes(t)
+          )
+        )
+      );
+      setResults(res.length > 0 ? res : securityEvents.slice(0, 3));
       setLoading(false);
     }, 600);
   };
 
-  const results = submitted
-    ? securityEvents.filter(e =>
-        e.description.toLowerCase().includes(submitted.toLowerCase()) ||
-        e.type.toLowerCase().includes(submitted.toLowerCase()) ||
-        e.sourceIp.includes(submitted) ||
-        e.severity === submitted.replace('severity:', '').trim() ||
-        e.rule.toLowerCase().includes(submitted.toLowerCase()) ||
-        e.source.includes(submitted)
-      )
-    : [];
-
-  const formatTs = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
   return (
-    <div className="p-6 space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Log Search</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>Search raw event logs across all sources</p>
-      </div>
-
-      {/* Search bar */}
-      <Card className="p-4 space-y-3">
-        <div className="flex gap-3">
-          <div
-            className="flex items-center gap-3 flex-1 px-4 py-3 rounded-lg"
-            style={{ background: 'hsl(222,47%,5%)', border: '1px solid hsl(222,25%,22%)' }}
-          >
-            <Search size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && runSearch(query)}
-              placeholder='Search events... (e.g., "sql injection", "brute force", "192.168", severity:critical)'
-              className="flex-1 bg-transparent outline-none text-sm font-mono"
-              style={{ color: '#f1f5f9' }}
-            />
+    <div className="space-y-5">
+      {/* Search Box */}
+      <Card>
+        <CardBody>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-xs text-[#475569] font-mono bg-[#050d1a] border border-[#1a3050] rounded px-3 py-1.5">
+              <Terminal className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-orange-400">phoenix-siem</span>
+              <span className="text-[#475569]">~</span>
+              <span className="text-green-400">$</span>
+              <span className="text-[#475569] ml-1">search --index all --timerange 24h</span>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#475569]" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && doSearch(query)}
+                placeholder='Search raw logs... e.g. "Failed password root" OR host:bastion-01 OR severity:critical'
+                className="w-full pl-11 pr-24 py-3.5 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50 font-mono"
+              />
+              <button
+                onClick={() => doSearch(query)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded text-sm hover:bg-orange-500/30 transition-colors"
+              >
+                Search
+              </button>
+            </div>
+            {/* Quick Filters */}
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-[10px] text-[#475569] uppercase tracking-wider">Quick Filters:</span>
+              {quickFilters.map((f) => (
+                <button
+                  key={f.label}
+                  onClick={() => { setQuery(f.query); doSearch(f.query); }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0d1f35] border border-[#1a3050] text-[11px] text-[#94a3b8] hover:text-white hover:border-orange-500/30 transition-colors"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <select
-            value={timeRange}
-            onChange={e => setTimeRange(e.target.value)}
-            className="px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: 'hsl(222,33%,14%)', border: '1px solid hsl(222,22%,20%)', color: '#cbd5e1' }}
-          >
-            {['15m','1h','6h','24h','7d','30d'].map(t => <option key={t} value={t}>Last {t}</option>)}
-          </select>
-          <button
-            onClick={() => runSearch(query)}
-            className="px-6 py-2 rounded-lg text-sm font-semibold flex items-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}
-          >
-            <Zap size={14} />
-            Search
-          </button>
-        </div>
-
-        {/* Saved searches */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>
-            <Clock size={11} className="inline mr-1" />Quick:
-          </span>
-          {savedSearches.map(s => (
-            <button
-              key={s.label}
-              onClick={() => runSearch(s.query)}
-              className="text-xs px-2.5 py-1 rounded-full"
-              style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,20%)', color: 'hsl(215,20%,60%)' }}
-            >{s.label}</button>
-          ))}
-        </div>
+        </CardBody>
       </Card>
 
-      {/* Source pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>Sources:</span>
-        {sourceSuggestions.map(s => (
-          <button
-            key={s}
-            onClick={() => runSearch(s)}
-            className="text-xs px-2.5 py-1 rounded font-mono"
-            style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.2)', color: '#38bdf8' }}
-          >{s}</button>
-        ))}
-      </div>
-
       {/* Results */}
-      {loading && (
-        <Card className="p-8 text-center">
-          <div className="font-mono text-sm" style={{ color: '#10b981' }}>
-            <div>Searching {securityEvents.length} events across last {timeRange}...</div>
-            <div className="mt-2 text-xs" style={{ color: 'hsl(215,15%,40%)' }}>Parsing indexes · Applying filters · Aggregating results</div>
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+            <span className="text-sm text-[#475569] font-mono">Searching event logs...</span>
           </div>
-        </Card>
-      )}
-
-      {!loading && submitted && (
-        <>
-          <div className="flex items-center gap-3">
-            <FileText size={14} style={{ color: '#10b981' }} />
-            <span className="text-sm font-mono" style={{ color: '#10b981' }}>
-              {results.length} results for <span style={{ color: '#f1f5f9' }}>"{submitted}"</span>
-            </span>
-            <span className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>· {timeRange} window</span>
-          </div>
-
-          <Card className="overflow-hidden">
-            <div
-              className="grid text-[10px] font-semibold uppercase tracking-wider px-4 py-2.5"
-              style={{ gridTemplateColumns: '150px 100px 150px 1fr 120px 100px', background: 'hsl(222,40%,9%)', borderBottom: '1px solid hsl(222,22%,16%)', color: 'hsl(215,15%,40%)' }}
-            >
-              <span>TIMESTAMP</span>
-              <span>SEVERITY</span>
-              <span>TYPE</span>
-              <span>DESCRIPTION</span>
-              <span>SOURCE IP</span>
-              <span>SOURCE</span>
-            </div>
-            {results.length === 0 ? (
-              <div className="text-center py-12" style={{ color: 'hsl(215,15%,40%)' }}>
-                <Search size={32} className="mx-auto mb-3 opacity-30" />
-                No events match your query
+        </div>
+      ) : submitted && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Search Results</h3>
+                <p className="text-xs text-[#475569] mt-0.5">
+                  Found <span className="text-orange-400 font-mono">{results.length}</span> events matching <span className="font-mono text-white">"{submitted}"</span>
+                </p>
               </div>
-            ) : results.map((evt, idx) => (
-              <div
-                key={evt.id}
-                className="grid items-center px-4 py-3 text-xs border-b hover:opacity-90"
-                style={{
-                  gridTemplateColumns: '150px 100px 150px 1fr 120px 100px',
-                  borderColor: 'hsl(222,22%,13%)',
-                  background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                }}
-              >
-                <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,45%)' }}>{formatTs(evt.timestamp)}</span>
-                <SeverityBadge severity={evt.severity} size="sm" />
-                <span style={{ color: '#cbd5e1' }}>{evt.type}</span>
-                <span className="truncate pr-4" style={{ color: 'hsl(215,20%,60%)' }}>{evt.description}</span>
-                <span className="font-mono" style={{ color: '#38bdf8' }}>{evt.sourceIp}</span>
-                <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{evt.source}</span>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-[#475569]" />
+                <span className="text-xs text-[#475569]">Last 24 hours</span>
+              </div>
+            </div>
+          </CardHeader>
+          <div className="divide-y divide-[#0a1628]">
+            {results.map((evt) => (
+              <div key={evt.id} className="px-5 py-4 hover:bg-[#0a1628] transition-colors">
+                <div className="flex items-start gap-3">
+                  <SeverityBadge severity={evt.severity} className="mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-white">{evt.description}</span>
+                      <span className="text-xs text-[#475569] font-mono flex-shrink-0">{format(evt.timestamp, 'HH:mm:ss')}</span>
+                    </div>
+                    <div className="mt-1.5 font-mono text-xs text-green-400 bg-[#050d1a] border border-[#1a3050] rounded px-3 py-2 break-all">
+                      {evt.raw}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-[10px] text-[#475569]">
+                      <span className="font-mono">{evt.id}</span>
+                      <span>·</span>
+                      <span className="font-mono">{evt.host}</span>
+                      {evt.user && (<><span>·</span><span>user: {evt.user}</span></>)}
+                      <span>·</span>
+                      <span className="font-mono">{evt.source}</span>
+                      <span>·</span>
+                      <span className="font-mono">{evt.ruleId}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
-          </Card>
-        </>
+          </div>
+        </Card>
       )}
 
-      {!loading && !submitted && (
-        <Card className="p-12 text-center">
-          <Search size={40} className="mx-auto mb-4 opacity-20" style={{ color: '#10b981' }} />
-          <p className="font-medium" style={{ color: 'hsl(215,20%,60%)' }}>Enter a search query or click a quick search above</p>
-          <p className="text-xs mt-1" style={{ color: 'hsl(215,15%,40%)' }}>Supports keyword, IP, severity, and rule ID searches</p>
-        </Card>
+      {!submitted && (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-16 h-16 rounded-full bg-[#0d1f35] border border-[#1a3050] flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-[#475569]" />
+          </div>
+          <div className="text-center">
+            <div className="text-sm font-medium text-[#94a3b8]">Enter a search query to investigate logs</div>
+            <div className="text-xs text-[#475569] mt-1">Supports text search, field filters, and boolean operators</div>
+          </div>
+        </div>
       )}
     </div>
   );

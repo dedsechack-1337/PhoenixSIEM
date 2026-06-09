@@ -1,238 +1,203 @@
-import { useState, useEffect } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, Legend
 } from 'recharts';
-import {
-  Activity, AlertTriangle, Server, Database, TrendingUp, Clock, Eye
-} from 'lucide-react';
-import Card from '../components/ui/Card';
-import StatCard from '../components/ui/StatCard';
-import SeverityBadge from '../components/ui/SeverityBadge';
-import {
-  securityEvents, alerts, assets, threatIntel,
-  timelineData, getSeverityDistribution
-} from '../data';
+import { ShieldAlert, Bell, Monitor, Globe, TrendingUp, Activity, Flame } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
+import { SeverityBadge } from '../components/ui/SeverityBadge';
+import { timelineData, severityDist, securityEvents, alerts } from '../data/mockData';
+import { formatDistanceToNow } from 'date-fns';
 
-const openAlerts = alerts.filter(a => a.status === 'open' || a.status === 'investigating').length;
-const onlineAssets = assets.filter(a => a.status === 'online').length;
-const activeIOCs = threatIntel.filter(t => t.active).length;
-const criticalEvents = securityEvents.filter(e => e.severity === 'critical').length;
+const statCards = [
+  { label: 'Total Events (24h)', value: '3,847', change: '+12%', icon: ShieldAlert, color: 'blue', sub: 'vs yesterday' },
+  { label: 'Active Alerts', value: '23', change: '+5', icon: Bell, color: 'red', sub: 'require attention' },
+  { label: 'Online Assets', value: '11/12', change: '91.7%', icon: Monitor, color: 'green', sub: 'uptime' },
+  { label: 'Threat Intel IOCs', value: '12', change: '10 active', icon: Globe, color: 'orange', sub: 'indicators tracked' },
+];
 
-const RADIAN = Math.PI / 180;
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  return value > 0 ? (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="600">
-      {value}
-    </text>
-  ) : null;
+const colorMap: Record<string, string> = {
+  blue: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
+  red: 'text-red-400 bg-red-500/15 border-red-500/30',
+  green: 'text-green-400 bg-green-500/15 border-green-500/30',
+  orange: 'text-orange-400 bg-orange-500/15 border-orange-500/30',
 };
 
-export default function Dashboard() {
-  const [ticker, setTicker] = useState(0);
-  const recentEvents = securityEvents.slice(0, 8 + ticker % 3);
-  const sevDist = getSeverityDistribution();
-
-  useEffect(() => {
-    const id = setInterval(() => setTicker(t => t + 1), 5000);
-    return () => clearInterval(id);
-  }, []);
-
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
+export function Dashboard() {
+  const recentEvents = securityEvents.slice(0, 8);
+  const openAlerts = alerts.filter(a => a.status === 'open' || a.status === 'acknowledged').slice(0, 5);
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Security Dashboard</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
-            Real-time security monitoring • Last updated: {new Date().toLocaleTimeString()}
-          </p>
+    <div className="space-y-6">
+      {/* AI Banner */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-orange-500/30 bg-orange-500/5">
+        <Flame className="w-5 h-5 text-orange-400 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm text-orange-300 font-medium">AI Threat Analysis Active — </span>
+          <span className="text-sm text-[#94a3b8]">PhoenixSIEM AI detected 3 new correlated attack patterns in the last hour. Cobalt Strike C2 campaign targeting Finance workstations with 97% confidence.</span>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
-          <span className="w-2 h-2 rounded-full pulse-dot" style={{ background: '#10b981' }} />
-          LIVE
-        </div>
+        <span className="text-xs font-mono text-orange-400/60 flex-shrink-0">just now</span>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Events (24h)"
-          value={securityEvents.length.toLocaleString()}
-          icon={<Activity size={20} />}
-          color="#38bdf8"
-          delta="12% from yesterday"
-          deltaUp={true}
-        />
-        <StatCard
-          title="Active Alerts"
-          value={openAlerts}
-          icon={<AlertTriangle size={20} />}
-          color="#ef4444"
-          delta="3 new in last hour"
-          deltaUp={false}
-        />
-        <StatCard
-          title="Online Assets"
-          value={`${onlineAssets}/${assets.length}`}
-          icon={<Server size={20} />}
-          color="#10b981"
-          subtitle="2 warning, 1 offline"
-        />
-        <StatCard
-          title="Threat Intel IOCs"
-          value={activeIOCs}
-          icon={<Database size={20} />}
-          color="#a78bfa"
-          delta="2 new today"
-          deltaUp={false}
-        />
-      </div>
-
-      {/* Secondary stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.15)' }}>
-            <TrendingUp size={18} style={{ color: '#ef4444' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold font-mono" style={{ color: '#ef4444' }}>{criticalEvents}</p>
-            <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Critical Events Today</p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)' }}>
-            <Clock size={18} style={{ color: '#10b981' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold font-mono" style={{ color: '#10b981' }}>4.2m</p>
-            <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Avg. Detection Time (MTTD)</p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(56,189,248,0.15)' }}>
-            <Eye size={18} style={{ color: '#38bdf8' }} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold font-mono" style={{ color: '#38bdf8' }}>99.8%</p>
-            <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Sensor Coverage</p>
-          </div>
-        </Card>
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Card key={card.label} className="hover:border-orange-500/30 transition-colors">
+              <CardBody className="flex items-start gap-4">
+                <div className={`p-2.5 rounded-lg border ${colorMap[card.color]}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-2xl font-bold text-white">{card.value}</div>
+                  <div className="text-xs text-[#475569] mt-0.5">{card.label}</div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <TrendingUp className="w-3 h-3 text-green-400" />
+                    <span className="text-[11px] text-green-400 font-mono">{card.change}</span>
+                    <span className="text-[11px] text-[#475569]">{card.sub}</span>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Timeline Chart */}
-        <Card className="col-span-2 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-semibold" style={{ color: '#f1f5f9' }}>Event Timeline</h2>
-              <p className="text-xs" style={{ color: 'hsl(215,15%,45%)' }}>Total vs Critical events over 24h</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-0.5 rounded" style={{ background: '#38bdf8' }} />
-                <span style={{ color: 'hsl(215,20%,60%)' }}>Total</span>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Timeline */}
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Event Timeline</h3>
+                <p className="text-xs text-[#475569] mt-0.5">Total vs Critical events — last 24 hours</p>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-0.5 rounded" style={{ background: '#ef4444' }} />
-                <span style={{ color: 'hsl(215,20%,60%)' }}>Critical</span>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400"></span>
+                </span>
+                <span className="text-[11px] text-orange-400 font-mono">LIVE</span>
               </div>
             </div>
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={timelineData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
-              <defs>
-                <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="critGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="time" tick={{ fontSize: 10, fill: 'hsl(215,15%,40%)' }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'hsl(215,15%,40%)' }} tickLine={false} axisLine={false} />
-              <Tooltip
-                contentStyle={{ background: 'hsl(222,35%,12%)', border: '1px solid hsl(222,25%,20%)', borderRadius: 8, fontSize: 12 }}
-                labelStyle={{ color: '#f1f5f9' }}
-                itemStyle={{ color: '#94a3b8' }}
-              />
-              <Area type="monotone" dataKey="total" stroke="#38bdf8" fill="url(#totalGrad)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="critical" stroke="#ef4444" fill="url(#critGrad)" strokeWidth={2} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
+          </CardHeader>
+          <CardBody className="pt-2">
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={timelineData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="criticalGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a3050" />
+                <XAxis dataKey="hour" tick={{ fill: '#475569', fontSize: 10 }} interval={3} />
+                <YAxis tick={{ fill: '#475569', fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ background: '#0d1f35', border: '1px solid #1a3050', borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: '#94a3b8' }}
+                />
+                <Area type="monotone" dataKey="total" name="Total" stroke="#3b82f6" strokeWidth={2} fill="url(#totalGrad)" />
+                <Area type="monotone" dataKey="critical" name="Critical" stroke="#ef4444" strokeWidth={2} fill="url(#criticalGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardBody>
         </Card>
 
         {/* Severity Donut */}
-        <Card className="p-5">
-          <h2 className="font-semibold mb-1" style={{ color: '#f1f5f9' }}>Severity Distribution</h2>
-          <p className="text-xs mb-3" style={{ color: 'hsl(215,15%,45%)' }}>Events by severity level</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <PieChart>
-              <Pie
-                data={sevDist}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={70}
-                paddingAngle={2}
-                dataKey="value"
-                labelLine={false}
-                label={renderCustomLabel}
-              >
-                {sevDist.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="space-y-1.5 mt-1">
-            {sevDist.map(s => (
-              <div key={s.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: s.fill }} />
-                  <span style={{ color: 'hsl(215,20%,60%)' }}>{s.name}</span>
+        <Card>
+          <CardHeader>
+            <h3 className="text-sm font-semibold text-white">Severity Distribution</h3>
+            <p className="text-xs text-[#475569] mt-0.5">Active alerts by severity</p>
+          </CardHeader>
+          <CardBody>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie data={severityDist} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
+                  {severityDist.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: '#0d1f35', border: '1px solid #1a3050', borderRadius: 8, fontSize: 12 }}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => <span style={{ color: '#94a3b8', fontSize: 11 }}>{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Bottom Row */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Recent Events */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Recent Events</h3>
+                <p className="text-xs text-[#475569] mt-0.5">Latest security events</p>
+              </div>
+              <Activity className="w-4 h-4 text-[#475569]" />
+            </div>
+          </CardHeader>
+          <div className="divide-y divide-[#1a3050]">
+            {recentEvents.map((evt) => (
+              <div key={evt.id} className="flex items-start gap-3 px-5 py-3 hover:bg-[#0a1628] transition-colors">
+                <SeverityBadge severity={evt.severity} className="mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-white truncate">{evt.description}</div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] font-mono text-[#475569]">{evt.host}</span>
+                    <span className="text-[#1a3050]">·</span>
+                    <span className="text-[10px] text-[#475569]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
+                  </div>
                 </div>
-                <span className="font-mono font-semibold" style={{ color: '#f1f5f9' }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Active Alerts */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Active Alerts</h3>
+                <p className="text-xs text-[#475569] mt-0.5">Open & acknowledged alerts</p>
+              </div>
+              <Bell className="w-4 h-4 text-[#475569]" />
+            </div>
+          </CardHeader>
+          <div className="divide-y divide-[#1a3050]">
+            {openAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-start gap-3 px-5 py-3 hover:bg-[#0a1628] transition-colors">
+                <SeverityBadge severity={alert.severity} className="mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-white truncate">{alert.title}</div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                      alert.status === 'open' ? 'bg-red-500/20 text-red-400' :
+                      alert.status === 'acknowledged' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-blue-500/20 text-blue-400'
+                    }`}>{alert.status.toUpperCase()}</span>
+                    <span className="text-[10px] font-mono text-[#475569]">{alert.mitreId}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </Card>
       </div>
-
-      {/* Recent Events */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold" style={{ color: '#f1f5f9' }}>Recent Events</h2>
-          <span className="text-xs font-mono" style={{ color: '#10b981' }}>AUTO-REFRESHING</span>
-        </div>
-        <div className="space-y-2">
-          {recentEvents.map(evt => (
-            <div
-              key={evt.id}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs"
-              style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,16%)' }}
-            >
-              <SeverityBadge severity={evt.severity} size="sm" />
-              <span className="font-mono" style={{ color: 'hsl(215,15%,45%)', flexShrink: 0 }}>
-                {formatTime(evt.timestamp)}
-              </span>
-              <span className="font-medium" style={{ color: '#cbd5e1', flexShrink: 0 }}>{evt.type}</span>
-              <span className="flex-1 truncate" style={{ color: 'hsl(215,15%,45%)' }}>{evt.description}</span>
-              <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,38%)', flexShrink: 0 }}>{evt.sourceIp}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }

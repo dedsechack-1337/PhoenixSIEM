@@ -1,173 +1,187 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, Filter, RefreshCw } from 'lucide-react';
-import Card from '../components/ui/Card';
-import SeverityBadge from '../components/ui/SeverityBadge';
-import { securityEvents, Severity } from '../data';
+import { useState, useMemo } from 'react';
+import { Search, Filter, RefreshCw, ChevronDown } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
+import { SeverityBadge } from '../components/ui/SeverityBadge';
+import { securityEvents, Severity, EventType } from '../data/mockData';
+import { formatDistanceToNow, format } from 'date-fns';
 
-const eventTypes = ['All Types', 'Intrusion Attempt', 'Brute Force', 'Malware Detected', 'Port Scan', 'Data Exfiltration', 'Privilege Escalation', 'Lateral Movement', 'C2 Communication', 'Ransomware Activity', 'Phishing', 'Vulnerability Exploit', 'Policy Violation', 'Authentication'];
-const severities: (Severity | 'all')[] = ['all', 'critical', 'high', 'medium', 'low', 'info'];
-const sources = ['All Sources', 'ext-fw-01', 'auth-srv-01', 'edr-agent', 'ndr-01', 'dlp-01', 'waf-01', 'ids-01', 'email-gw-01', 'siem-core', 'proxy-01'];
+const severities: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
+const eventTypes: EventType[] = ['intrusion', 'malware', 'brute_force', 'port_scan', 'data_exfil', 'policy', 'auth', 'anomaly'];
 
-const sevColor: Record<string, string> = {
-  critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#10b981', info: '#38bdf8',
+const typeColors: Record<EventType, string> = {
+  intrusion: 'text-red-400 bg-red-500/10 border-red-500/30',
+  malware: 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+  brute_force: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
+  port_scan: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+  data_exfil: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+  policy: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
+  auth: 'text-green-400 bg-green-500/10 border-green-500/30',
+  anomaly: 'text-pink-400 bg-pink-500/10 border-pink-500/30',
 };
 
-export default function Events() {
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('All Types');
-  const [sevFilter, setSevFilter] = useState<'all' | Severity>('all');
-  const [sourceFilter, setSourceFilter] = useState('All Sources');
-  const [liveCount, setLiveCount] = useState(securityEvents.length);
-  const [paused, setPaused] = useState(false);
-  const tickerRef = useRef<HTMLDivElement>(null);
+const typeLabels: Record<EventType, string> = {
+  intrusion: 'Intrusion',
+  malware: 'Malware',
+  brute_force: 'Brute Force',
+  port_scan: 'Port Scan',
+  data_exfil: 'Data Exfil',
+  policy: 'Policy',
+  auth: 'Authentication',
+  anomaly: 'Anomaly',
+};
 
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => setLiveCount(c => Math.min(c + 1, 999)), 8000);
-    return () => clearInterval(id);
-  }, [paused]);
+export function Events() {
+  const [query, setQuery] = useState('');
+  const [filterSeverity, setFilterSeverity] = useState<Severity | 'all'>('all');
+  const [filterType, setFilterType] = useState<EventType | 'all'>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filtered = securityEvents.filter(e => {
-    if (search && !e.description.toLowerCase().includes(search.toLowerCase()) && !e.sourceIp.includes(search) && !e.type.toLowerCase().includes(search.toLowerCase())) return false;
-    if (typeFilter !== 'All Types' && e.type !== typeFilter) return false;
-    if (sevFilter !== 'all' && e.severity !== sevFilter) return false;
-    if (sourceFilter !== 'All Sources' && e.source !== sourceFilter) return false;
-    return true;
-  });
-
-  const formatTs = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
+  const filtered = useMemo(() => {
+    return securityEvents.filter((e) => {
+      const matchQuery = query === '' || [e.description, e.source, e.host, e.ruleId, e.raw].some(
+        (f) => f?.toLowerCase().includes(query.toLowerCase())
+      );
+      const matchSev = filterSeverity === 'all' || e.severity === filterSeverity;
+      const matchType = filterType === 'all' || e.type === filterType;
+      return matchQuery && matchSev && matchType;
+    });
+  }, [query, filterSeverity, filterType]);
 
   return (
-    <div className="p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Security Events</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
-            Live event feed • {liveCount} total events ingested
-          </p>
+    <div className="space-y-5">
+      {/* Ticker */}
+      <div className="overflow-hidden rounded-lg border border-[#1a3050] bg-[#080f1e] py-2">
+        <div className="flex gap-8 animate-none" style={{ whiteSpace: 'nowrap' }}>
+          <div className="flex gap-8 px-4">
+            {securityEvents.slice(0, 10).map((e) => (
+              <span key={e.id} className="inline-flex items-center gap-2 text-xs font-mono">
+                <span className={`${e.severity === 'critical' ? 'text-red-400' : e.severity === 'high' ? 'text-orange-400' : 'text-yellow-400'}`}>
+                  ●
+                </span>
+                <span className="text-[#94a3b8]">{e.description.slice(0, 60)}…</span>
+                <span className="text-[#475569]">{e.host}</span>
+              </span>
+            ))}
+          </div>
         </div>
-        <button
-          onClick={() => setPaused(p => !p)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-          style={{
-            background: paused ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-            color: paused ? '#ef4444' : '#10b981',
-            border: `1px solid ${paused ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`,
-          }}
-        >
-          <RefreshCw size={14} className={paused ? '' : 'animate-spin'} style={{ animationDuration: '3s' }} />
-          {paused ? 'Paused' : 'Live Feed'}
-        </button>
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 flex-1 min-w-48 px-3 py-2 rounded-lg" style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,18%)' }}>
-            <Search size={14} style={{ color: 'hsl(215,15%,45%)' }} />
+      <Card>
+        <CardBody className="flex flex-wrap gap-3 items-center py-3">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#475569]" />
             <input
               type="text"
-              placeholder="Search events, IPs, descriptions..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="bg-transparent flex-1 outline-none text-sm"
-              style={{ color: '#f1f5f9' }}
+              placeholder="Search events, IPs, hosts, rules..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter size={14} style={{ color: 'hsl(215,15%,45%)' }} />
+            <Filter className="w-3.5 h-3.5 text-[#475569]" />
+            <select
+              value={filterSeverity}
+              onChange={(e) => setFilterSeverity(e.target.value as Severity | 'all')}
+              className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none focus:border-orange-500/50"
+            >
+              <option value="all">All Severities</option>
+              {severities.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+            </select>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as EventType | 'all')}
+              className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none focus:border-orange-500/50"
+            >
+              <option value="all">All Types</option>
+              {eventTypes.map((t) => <option key={t} value={t}>{typeLabels[t]}</option>)}
+            </select>
           </div>
-          <select
-            value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,18%)', color: '#cbd5e1' }}
-          >
-            {eventTypes.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <select
-            value={sevFilter}
-            onChange={e => setSevFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,18%)', color: '#cbd5e1' }}
-          >
-            {severities.map(s => <option key={s} value={s}>{s === 'all' ? 'All Severities' : s.toUpperCase()}</option>)}
-          </select>
-          <select
-            value={sourceFilter}
-            onChange={e => setSourceFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,18%)', color: '#cbd5e1' }}
-          >
-            {sources.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'rgba(56,189,248,0.1)', color: '#38bdf8' }}>
-            {filtered.length} results
-          </span>
-        </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-[#475569] font-mono">{filtered.length} events</span>
+            <button className="flex items-center gap-1.5 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg text-xs text-orange-400 hover:bg-orange-500/20 transition-colors">
+              <RefreshCw className="w-3 h-3" /> Refresh
+            </button>
+          </div>
+        </CardBody>
       </Card>
 
-      {/* Event Ticker Feed */}
-      <Card className="overflow-hidden">
-        {/* Table header */}
-        <div
-          className="grid text-[10px] font-semibold uppercase tracking-wider px-4 py-2.5"
-          style={{ gridTemplateColumns: '140px 120px 160px 1fr 130px 100px', background: 'hsl(222,40%,9%)', borderBottom: '1px solid hsl(222,22%,16%)', color: 'hsl(215,15%,40%)' }}
-        >
-          <span>TIMESTAMP</span>
-          <span>SEVERITY</span>
-          <span>TYPE</span>
-          <span>DESCRIPTION</span>
-          <span>SOURCE IP</span>
-          <span>RULE ID</span>
-        </div>
-
-        {/* Events */}
-        <div ref={tickerRef} className="custom-scroll overflow-y-auto" style={{ maxHeight: '65vh' }}>
-          {filtered.length === 0 ? (
-            <div className="text-center py-16" style={{ color: 'hsl(215,15%,40%)' }}>
-              No events match your filters
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-white">Security Events Feed</h3>
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400"></span>
+              </span>
+              <span className="text-[11px] text-orange-400 font-mono">LIVE</span>
             </div>
-          ) : (
-            filtered.map((evt, idx) => (
-              <div
-                key={evt.id}
-                className="grid items-center px-4 py-3 text-xs border-b cursor-pointer transition-colors hover:opacity-90"
-                style={{
-                  gridTemplateColumns: '140px 120px 160px 1fr 130px 100px',
-                  borderColor: 'hsl(222,22%,13%)',
-                  background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                  borderLeft: `2px solid ${sevColor[evt.severity]}30`,
-                }}
-              >
-                <span className="font-mono" style={{ color: 'hsl(215,15%,45%)' }}>{formatTs(evt.timestamp)}</span>
-                <SeverityBadge severity={evt.severity} size="sm" />
-                <span className="font-medium" style={{ color: '#cbd5e1' }}>{evt.type}</span>
-                <span className="truncate pr-4" style={{ color: 'hsl(215,20%,60%)' }}>{evt.description}</span>
-                <span className="font-mono" style={{ color: '#38bdf8' }}>{evt.sourceIp}</span>
-                <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,38%)' }}>{evt.rule}</span>
-              </div>
-            ))
+          </div>
+        </CardHeader>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#1a3050]">
+                {['Severity', 'Type', 'Description', 'Source IP', 'Host', 'Rule', 'Time'].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#475569] uppercase">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#0a1628]">
+              {filtered.map((evt) => (
+                <>
+                  <tr
+                    key={evt.id}
+                    className="hover:bg-[#0a1628] cursor-pointer transition-colors"
+                    onClick={() => setExpandedId(expandedId === evt.id ? null : evt.id)}
+                  >
+                    <td className="px-4 py-3"><SeverityBadge severity={evt.severity} /></td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-mono font-medium ${typeColors[evt.type]}`}>
+                        {typeLabels[evt.type]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 max-w-xs">
+                      <div className="text-xs text-white truncate">{evt.description}</div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{evt.source}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{evt.host}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#475569]">{evt.ruleId}</td>
+                    <td className="px-4 py-3 text-xs text-[#475569] whitespace-nowrap">
+                      {formatDistanceToNow(evt.timestamp, { addSuffix: true })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ChevronDown className={`w-3.5 h-3.5 text-[#475569] transition-transform ${expandedId === evt.id ? 'rotate-180' : ''}`} />
+                    </td>
+                  </tr>
+                  {expandedId === evt.id && (
+                    <tr key={`${evt.id}-detail`} className="bg-[#080f1e]">
+                      <td colSpan={8} className="px-6 py-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Event ID</div><div className="text-xs font-mono text-[#94a3b8]">{evt.id}</div></div>
+                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Timestamp</div><div className="text-xs font-mono text-[#94a3b8]">{format(evt.timestamp, 'yyyy-MM-dd HH:mm:ss')}</div></div>
+                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">User</div><div className="text-xs font-mono text-[#94a3b8]">{evt.user || 'N/A'}</div></div>
+                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Destination</div><div className="text-xs font-mono text-[#94a3b8]">{evt.destination || 'N/A'}</div></div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Raw Log</div>
+                          <div className="font-mono text-xs text-green-400 bg-[#050d1a] border border-[#1a3050] rounded px-4 py-3 break-all">{evt.raw}</div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="py-16 text-center text-[#475569] text-sm">No events match your filters</div>
           )}
         </div>
       </Card>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-5 gap-3">
-        {(['critical', 'high', 'medium', 'low', 'info'] as Severity[]).map(sev => {
-          const count = securityEvents.filter(e => e.severity === sev).length;
-          return (
-            <Card key={sev} className="p-3 flex items-center justify-between cursor-pointer" hover onClick={() => setSevFilter(sev)}>
-              <span className="text-xs font-mono uppercase" style={{ color: sevColor[sev] }}>{sev}</span>
-              <span className="text-lg font-bold font-mono" style={{ color: sevColor[sev] }}>{count}</span>
-            </Card>
-          );
-        })}
-      </div>
     </div>
   );
 }

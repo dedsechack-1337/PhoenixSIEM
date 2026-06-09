@@ -1,221 +1,216 @@
 import { useState } from 'react';
-import { Users, MapPin, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
-import Card from '../components/ui/Card';
-import SeverityBadge from '../components/ui/SeverityBadge';
-import Badge from '../components/ui/Badge';
-import { ubaEvents, UBAType, UBAStatus } from '../data';
+import { TrendingUp, MapPin } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
+import { ubaEvents, UBAEvent, UBAStatus, UBAType } from '../data/mockData';
+import { formatDistanceToNow } from 'date-fns';
 
-const typeConfig: Record<UBAType, { label: string; color: string; icon: any }> = {
-  impossible_travel:     { label: 'Impossible Travel',    color: '#ef4444', icon: MapPin },
-  unusual_login_time:    { label: 'Unusual Login Time',   color: '#f97316', icon: Clock },
-  excessive_data_access: { label: 'Excessive Data Access', color: '#eab308', icon: TrendingUp },
-  privilege_escalation:  { label: 'Privilege Escalation', color: '#a78bfa', icon: AlertTriangle },
-  lateral_movement:      { label: 'Lateral Movement',     color: '#ec4899', icon: Users },
-  after_hours:           { label: 'After-Hours Activity', color: '#38bdf8', icon: Clock },
-  data_staging:          { label: 'Data Staging',         color: '#f97316', icon: TrendingUp },
+const typeConfig: Record<UBAType, { label: string; color: string; icon: string }> = {
+  impossible_travel: { label: 'Impossible Travel', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: '✈️' },
+  unusual_login_time: { label: 'Unusual Login Time', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', icon: '🕐' },
+  excessive_data_access: { label: 'Excessive Data Access', color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', icon: '📊' },
+  privilege_escalation: { label: 'Privilege Escalation', color: 'text-purple-400 bg-purple-500/10 border-purple-500/30', icon: '⬆️' },
+  after_hours: { label: 'After-Hours Activity', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', icon: '🌙' },
+  lateral_movement: { label: 'Lateral Movement', color: 'text-pink-400 bg-pink-500/10 border-pink-500/30', icon: '↔️' },
+  data_staging: { label: 'Data Staging', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30', icon: '📦' },
 };
 
-const statusColors: Record<UBAStatus, string> = {
-  open: '#ef4444', investigating: '#f97316', resolved: '#10b981', false_positive: '#6b7280',
+const statusConfig: Record<UBAStatus, { label: string; color: string }> = {
+  open: { label: 'Open', color: 'text-red-400 bg-red-500/10 border-red-500/30' },
+  investigating: { label: 'Investigating', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
+  resolved: { label: 'Resolved', color: 'text-green-400 bg-green-500/10 border-green-500/30' },
+  false_positive: { label: 'False Positive', color: 'text-[#475569] bg-[#1a3050]/50 border-[#1a3050]' },
 };
 
-const riskColor = (score: number) => {
-  if (score >= 90) return '#ef4444';
-  if (score >= 70) return '#f97316';
-  if (score >= 50) return '#eab308';
-  return '#10b981';
-};
+function RiskScore({ score }: { score: number }) {
+  const color = score >= 90 ? 'text-red-400' : score >= 75 ? 'text-orange-400' : score >= 60 ? 'text-yellow-400' : 'text-green-400';
+  // bg computed inline in svg
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-12 h-12 relative flex-shrink-0">
+        <svg viewBox="0 0 36 36" className="w-12 h-12 -rotate-90">
+          <circle cx="18" cy="18" r="15" fill="none" stroke="#1a3050" strokeWidth="3" />
+          <circle cx="18" cy="18" r="15" fill="none" stroke={score >= 90 ? '#ef4444' : score >= 75 ? '#f97316' : score >= 60 ? '#eab308' : '#22c55e'} strokeWidth="3" strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round" />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={`text-[10px] font-bold ${color}`}>{score}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-// Top risky users from UBA events
-const userRisk = () => {
-  const map: Record<string, { user: string; dept: string; score: number; events: number }> = {};
-  ubaEvents.forEach(e => {
-    if (!map[e.userId]) map[e.userId] = { user: e.user, dept: e.department, score: 0, events: 0 };
-    map[e.userId].score = Math.max(map[e.userId].score, e.riskScore);
-    map[e.userId].events++;
-  });
-  return Object.values(map).sort((a, b) => b.score - a.score);
-};
-
-export default function UBA() {
-  const [events, setEvents] = useState(ubaEvents);
-  const [typeFilter, setTypeFilter] = useState<UBAType | 'all'>('all');
+export function UBA() {
+  const [events, setEvents] = useState<UBAEvent[]>(ubaEvents);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const riskyUsers = userRisk();
+  const [filterStatus, setFilterStatus] = useState<UBAStatus | 'all'>('all');
 
   const updateStatus = (id: string, status: UBAStatus) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
   };
 
-  const filtered = events.filter(e => typeFilter === 'all' || e.type === typeFilter);
+  const filtered = filterStatus === 'all' ? events : events.filter((e) => e.status === filterStatus);
+  const sorted = [...filtered].sort((a, b) => b.riskScore - a.riskScore);
 
-  const formatTs = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  // Top risky users
+  const userRisks = events.reduce<Record<string, number>>((acc, e) => {
+    acc[e.username] = Math.max(acc[e.username] ?? 0, e.riskScore);
+    return acc;
+  }, {});
+  const topUsers = Object.entries(userRisks).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
-    <div className="p-6 space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>User Behavior Analytics</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
-          {events.filter(e => e.status === 'open').length} open anomalies · {events.filter(e => e.riskScore >= 90).length} critical risk users
-        </p>
+    <div className="space-y-5">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Anomalies Detected', value: events.length, color: 'text-white' },
+          { label: 'Open', value: events.filter((e) => e.status === 'open').length, color: 'text-red-400' },
+          { label: 'High Risk (>80)', value: events.filter((e) => e.riskScore > 80).length, color: 'text-orange-400' },
+          { label: 'Avg Risk Score', value: Math.round(events.reduce((s, e) => s + e.riskScore, 0) / events.length), color: 'text-yellow-400' },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardBody className="py-4">
+              <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+            </CardBody>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
-        {/* Main anomalies panel */}
-        <div className="col-span-2 space-y-4">
-          {/* Type filter */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setTypeFilter('all')}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium"
-              style={{
-                background: typeFilter === 'all' ? 'rgba(16,185,129,0.15)' : 'hsl(222,33%,14%)',
-                color: typeFilter === 'all' ? '#10b981' : 'hsl(215,15%,50%)',
-                border: `1px solid ${typeFilter === 'all' ? 'rgba(16,185,129,0.3)' : 'hsl(222,22%,20%)'}`,
-              }}
-            >All Types</button>
-            {Object.entries(typeConfig).map(([key, cfg]) => {
-              const count = events.filter(e => e.type === key).length;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setTypeFilter(key as UBAType)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                  style={{
-                    background: typeFilter === key ? `${cfg.color}15` : 'hsl(222,33%,14%)',
-                    color: typeFilter === key ? cfg.color : 'hsl(215,15%,50%)',
-                    border: `1px solid ${typeFilter === key ? `${cfg.color}40` : 'hsl(222,22%,20%)'}`,
-                  }}
-                >
-                  {cfg.label} ({count})
-                </button>
-              );
-            })}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        {/* Anomalies List */}
+        <div className="xl:col-span-2 space-y-3">
+          {/* Filters */}
+          <div className="flex gap-2 flex-wrap">
+            {(['all', 'open', 'investigating', 'resolved', 'false_positive'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filterStatus === s
+                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
+                    : 'bg-[#0d1f35] text-[#94a3b8] border border-[#1a3050] hover:text-white'
+                }`}
+              >
+                {s === 'all' ? 'All' : s === 'false_positive' ? 'False Positive' : statusConfig[s].label}
+              </button>
+            ))}
           </div>
 
-          {/* Anomaly list */}
-          <div className="space-y-3">
-            {filtered.map(evt => {
-              const cfg = typeConfig[evt.type];
-              const TypeIcon = cfg.icon;
-              const isExp = expanded === evt.id;
-              return (
-                <Card key={evt.id} className="overflow-hidden">
-                  <div
-                    className="p-4 cursor-pointer"
-                    style={{ borderLeft: `3px solid ${cfg.color}` }}
-                    onClick={() => setExpanded(isExp ? null : evt.id)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${cfg.color}15` }}>
-                        <TypeIcon size={16} style={{ color: cfg.color }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <SeverityBadge severity={evt.severity} size="sm" />
-                          <Badge color={cfg.color} className="text-[10px]">{cfg.label}</Badge>
-                          <Badge color={statusColors[evt.status]} className="text-[10px]">{evt.status.replace('_', ' ')}</Badge>
-                        </div>
-                        <div className="font-semibold text-sm" style={{ color: '#f1f5f9' }}>{evt.description}</div>
-                        <div className="flex items-center gap-3 mt-1 text-xs flex-wrap" style={{ color: 'hsl(215,15%,45%)' }}>
-                          <span style={{ color: '#38bdf8' }}>{evt.user}</span>
-                          <span>•</span>
-                          <span>{evt.department}</span>
-                          <span>•</span>
-                          <span>{formatTs(evt.timestamp)}</span>
-                          {evt.sourceIp && <><span>•</span><span className="font-mono">{evt.sourceIp}</span></>}
-                          {evt.location && <><span>•</span><span>{evt.location}</span></>}
-                        </div>
+          {sorted.map((evt) => {
+            const { label: typeLabel, color: typeColor, icon } = typeConfig[evt.type];
+            const isExp = expanded === evt.id;
 
-                        {isExp && (
-                          <div className="mt-3 space-y-3" onClick={e => e.stopPropagation()}>
-                            <div className="text-xs px-3 py-2 rounded-lg" style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,16%)', color: '#94a3b8' }}>
-                              {evt.details}
-                            </div>
-                            {evt.previousLocation && (
-                              <div className="flex items-center gap-2 text-xs">
-                                <span style={{ color: 'hsl(215,15%,45%)' }}>Travel:</span>
-                                <span style={{ color: '#10b981' }}>{evt.previousLocation}</span>
-                                <span style={{ color: 'hsl(215,15%,45%)' }}>→</span>
-                                <span style={{ color: '#ef4444' }}>{evt.location}</span>
-                                {evt.timeBetween && <Badge color="#ef4444">in {evt.timeBetween}</Badge>}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs" style={{ color: 'hsl(215,15%,40%)' }}>Actions:</span>
-                              {(['investigating', 'resolved', 'false_positive'] as UBAStatus[]).filter(s => s !== evt.status).map(s => (
-                                <button
-                                  key={s}
-                                  onClick={() => updateStatus(evt.id, s)}
-                                  className="px-2.5 py-1 rounded text-xs"
-                                  style={{ background: `${statusColors[s]}15`, color: statusColors[s], border: `1px solid ${statusColors[s]}30` }}
-                                >→ {s.replace('_', ' ')}</button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Risk score */}
-                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center"
-                          style={{ border: `2px solid ${riskColor(evt.riskScore)}`, background: `${riskColor(evt.riskScore)}10` }}
-                        >
-                          <span className="font-mono font-bold text-sm" style={{ color: riskColor(evt.riskScore) }}>{evt.riskScore}</span>
+            return (
+              <Card key={evt.id} className={`${evt.riskScore >= 90 ? 'border-red-500/30' : ''} transition-colors`}>
+                <div
+                  className="flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-[#0a1628] rounded-xl transition-colors"
+                  onClick={() => setExpanded(isExp ? null : evt.id)}
+                >
+                  <RiskScore score={evt.riskScore} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${typeColor}`}>
+                            {icon} {typeLabel}
+                          </span>
+                          <span className="text-sm font-semibold text-white">{evt.username}</span>
+                          <span className="text-[10px] text-[#475569]">{evt.department}</span>
                         </div>
-                        <span className="text-[9px]" style={{ color: 'hsl(215,15%,40%)' }}>RISK</span>
+                        <p className="text-xs text-[#94a3b8] mt-1">{evt.description}</p>
+                      </div>
+                      <span className={`text-[10px] font-mono px-2 py-1 rounded border ${statusConfig[evt.status].color} flex-shrink-0`}>
+                        {statusConfig[evt.status].label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <span className="text-[10px] font-mono text-[#475569]">{evt.affectedHost}</span>
+                      <span className="text-[#1a3050]">·</span>
+                      <span className="text-[10px] text-[#475569]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {isExp && (
+                  <div className="border-t border-[#1a3050] px-5 py-4 bg-[#080f1e] rounded-b-xl space-y-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-1">Details</div>
+                      <p className="text-xs text-[#94a3b8]">{evt.details}</p>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-2">Update Status</div>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['open', 'investigating', 'resolved', 'false_positive'] as UBAStatus[]).map((s) => (
+                          <button
+                            key={s}
+                            onClick={(e) => { e.stopPropagation(); updateStatus(evt.id, s); }}
+                            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+                              evt.status === s ? statusConfig[s].color : 'border-[#1a3050] text-[#475569] hover:text-white'
+                            }`}
+                          >
+                            {s === 'false_positive' ? 'False Positive' : statusConfig[s].label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Top Risky Users sidebar */}
+        {/* Top Risky Users Sidebar */}
         <div className="space-y-4">
-          <Card className="p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: '#f1f5f9' }}>
-              <TrendingUp size={14} style={{ color: '#ef4444' }} />
-              Top Risky Users
-            </h3>
-            <div className="space-y-3">
-              {riskyUsers.slice(0, 8).map((user, i) => (
-                <div key={user.user} className="flex items-center gap-3">
-                  <div
-                    className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold font-mono flex-shrink-0"
-                    style={{ background: i < 3 ? `${riskColor(user.score)}15` : 'hsl(222,22%,20%)', color: i < 3 ? riskColor(user.score) : 'hsl(215,15%,45%)' }}
-                  >#{i + 1}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium truncate" style={{ color: '#f1f5f9' }}>{user.user}</div>
-                    <div className="text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{user.dept} · {user.events} anomal{user.events !== 1 ? 'ies' : 'y'}</div>
-                    <div className="mt-1 h-1 rounded-full overflow-hidden" style={{ background: 'hsl(222,22%,20%)' }}>
-                      <div className="h-full rounded-full" style={{ width: `${user.score}%`, background: riskColor(user.score) }} />
-                    </div>
-                  </div>
-                  <span className="font-mono font-bold text-sm flex-shrink-0" style={{ color: riskColor(user.score) }}>{user.score}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Anomaly type breakdown */}
-          <Card className="p-4">
-            <h3 className="font-semibold text-sm mb-3" style={{ color: '#f1f5f9' }}>Anomaly Types</h3>
-            <div className="space-y-2">
-              {Object.entries(typeConfig).map(([key, cfg]) => {
-                const count = events.filter(e => e.type === key).length;
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-orange-400" />
+                <h3 className="text-sm font-semibold text-white">Top Risk Users</h3>
+              </div>
+            </CardHeader>
+            <div className="divide-y divide-[#0a1628]">
+              {topUsers.map(([user, score], i) => {
+                const scoreColor = score >= 90 ? 'text-red-400' : score >= 75 ? 'text-orange-400' : 'text-yellow-400';
+                const bar = score >= 90 ? 'bg-red-500' : score >= 75 ? 'bg-orange-500' : 'bg-yellow-500';
                 return (
-                  <div key={key} className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.color }} />
-                    <span className="flex-1" style={{ color: 'hsl(215,20%,60%)' }}>{cfg.label}</span>
-                    <span className="font-mono font-bold" style={{ color: cfg.color }}>{count}</span>
+                  <div key={user} className="flex items-center gap-3 px-5 py-3">
+                    <span className="text-[10px] font-mono text-[#475569] w-4">#{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-mono text-white">{user}</div>
+                      <div className="mt-1 h-1 bg-[#1a3050] rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${bar}`} style={{ width: `${score}%` }} />
+                      </div>
+                    </div>
+                    <span className={`text-sm font-bold font-mono ${scoreColor}`}>{score}</span>
                   </div>
                 );
               })}
             </div>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-orange-400" />
+                <h3 className="text-sm font-semibold text-white">Anomaly Types</h3>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <div className="space-y-2">
+                {Object.entries(typeConfig).map(([type, cfg]) => {
+                  const count = events.filter((e) => e.type === type).length;
+                  if (count === 0) return null;
+                  return (
+                    <div key={type} className="flex items-center justify-between">
+                      <span className="text-xs text-[#94a3b8]">{cfg.icon} {cfg.label}</span>
+                      <span className="text-xs font-mono text-white">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardBody>
           </Card>
         </div>
       </div>

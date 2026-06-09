@@ -1,267 +1,322 @@
 import { useState } from 'react';
-import { Server, Monitor, Network, Plus, X, Check, Copy } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import { assets } from '../data';
+import { Monitor, Plus, X, Terminal, ChevronRight, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { Card, CardHeader, CardBody } from '../components/ui/Card';
+import { assets, Asset, AssetStatus } from '../data/mockData';
+import { formatDistanceToNow } from 'date-fns';
 
-const osColors: Record<string, string> = {
-  Windows: '#38bdf8', Linux: '#10b981', macOS: '#a78bfa', 'Network OS': '#f97316', Android: '#eab308', iOS: '#f472b6',
+const statusConfig: Record<AssetStatus, { icon: typeof Wifi; color: string; label: string }> = {
+  online: { icon: Wifi, color: 'text-green-400', label: 'Online' },
+  offline: { icon: WifiOff, color: 'text-red-400', label: 'Offline' },
+  warning: { icon: AlertTriangle, color: 'text-yellow-400', label: 'Warning' },
 };
 
-const typeIcons: Record<string, any> = {
-  workstation: Monitor, server: Server, network: Network, mobile: Monitor, cloud: Server,
+function riskColor(score: number) {
+  if (score >= 80) return 'text-red-400';
+  if (score >= 60) return 'text-orange-400';
+  if (score >= 40) return 'text-yellow-400';
+  return 'text-green-400';
+}
+
+function riskBg(score: number) {
+  if (score >= 80) return 'bg-red-500';
+  if (score >= 60) return 'bg-orange-500';
+  if (score >= 40) return 'bg-yellow-500';
+  return 'bg-green-500';
+}
+
+const osIcons: Record<string, string> = {
+  'Windows Server': '🪟',
+  'Windows 11': '🪟',
+  'Windows 10': '🪟',
+  'Ubuntu': '🐧',
+  'CentOS': '🐧',
+  'RHEL': '🐧',
+  'macOS': '🍎',
+  'Cisco IOS': '🌐',
 };
 
-const riskColor = (score: number) => {
-  if (score >= 80) return '#ef4444';
-  if (score >= 60) return '#f97316';
-  if (score >= 40) return '#eab308';
-  return '#10b981';
+const installScripts: Record<string, string> = {
+  Windows: `# PhoenixSIEM Agent — Windows PowerShell Install
+$AgentUrl = "https://agent.phoenixsiem.io/downloads/phoenix-agent-4.8.1-windows.msi"
+$EnrollKey = "PHNX-ENT-7f4a9b2c-d8e3-4f1a-b9c6"
+
+Write-Host "[+] Downloading PhoenixSIEM Agent..."
+Invoke-WebRequest -Uri $AgentUrl -OutFile "$env:TEMP\\phoenix-agent.msi"
+
+Write-Host "[+] Installing Agent..."
+Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\\phoenix-agent.msi /quiet ENROLL_KEY=$EnrollKey" -Wait
+
+Write-Host "[+] Starting PhoenixSIEM Service..."
+Start-Service -Name "PhoenixSIEMAgent"
+
+Write-Host "[✓] Agent installed and enrolled successfully!"`,
+  Linux: `#!/bin/bash
+# PhoenixSIEM Agent — Linux Install Script
+set -e
+
+AGENT_URL="https://agent.phoenixsiem.io/downloads/phoenix-agent-4.8.1-linux.deb"
+ENROLL_KEY="PHNX-ENT-7f4a9b2c-d8e3-4f1a-b9c6"
+
+echo "[+] Downloading PhoenixSIEM Agent..."
+curl -fsSL $AGENT_URL -o /tmp/phoenix-agent.deb
+
+echo "[+] Installing Agent..."
+sudo dpkg -i /tmp/phoenix-agent.deb
+
+echo "[+] Configuring enrollment key..."
+echo "ENROLL_KEY=$ENROLL_KEY" | sudo tee -a /etc/phoenix-siem/agent.conf
+
+echo "[+] Starting PhoenixSIEM Service..."
+sudo systemctl enable --now phoenix-agent
+
+echo "[✓] Agent installed and enrolled successfully!"`,
+  macOS: `#!/bin/bash
+# PhoenixSIEM Agent — macOS Install Script
+set -e
+
+AGENT_URL="https://agent.phoenixsiem.io/downloads/phoenix-agent-4.8.1-macos.pkg"
+ENROLL_KEY="PHNX-ENT-7f4a9b2c-d8e3-4f1a-b9c6"
+
+echo "[+] Downloading PhoenixSIEM Agent..."
+curl -fsSL $AGENT_URL -o /tmp/phoenix-agent.pkg
+
+echo "[+] Installing Agent..."
+sudo installer -pkg /tmp/phoenix-agent.pkg -target /
+
+echo "[+] Enrolling with key: $ENROLL_KEY"
+sudo /usr/local/bin/phoenix-agent enroll --key "$ENROLL_KEY"
+
+echo "[+] Starting PhoenixSIEM Agent..."
+sudo launchctl load /Library/LaunchDaemons/io.phoenixsiem.agent.plist
+
+echo "[✓] Agent installed and enrolled successfully!"`,
 };
 
-const installScripts: Record<string, (hostname: string) => string> = {
-  Windows: (h) => `# Sentinel Agent Install — Windows PowerShell\n# Run as Administrator\n\n$AgentUrl = "https://packages.sentinel.io/windows/sentinel-agent-4.7.2.msi"\n$ApiKey = "sk-sentinel-XXXX-YYYY-ZZZZ-DEMO"\n$ServerUrl = "https://siem.corp.local:55000"\n$Hostname = "${h}"\n\nWrite-Host "[*] Downloading Sentinel Agent..." -ForegroundColor Cyan\nInvoke-WebRequest -Uri $AgentUrl -OutFile "$env:TEMP\\sentinel-agent.msi"\n\nWrite-Host "[*] Installing agent..." -ForegroundColor Cyan\nmsiexec /i "$env:TEMP\\sentinel-agent.msi" /quiet \`\n  SENTINEL_SERVER="$ServerUrl" \`\n  SENTINEL_KEY="$ApiKey" \`\n  SENTINEL_AGENT_NAME="$Hostname"\n\nWrite-Host "[+] Starting Sentinel service..." -ForegroundColor Green\nStart-Service SentinelAgent\nSet-Service SentinelAgent -StartupType Automatic\n\nWrite-Host "[✓] Agent enrolled successfully!" -ForegroundColor Green`,
-
-  Linux: (h) => `#!/bin/bash\n# Sentinel Agent Install — Linux\n# Run as root\n\nAPI_KEY="sk-sentinel-XXXX-YYYY-ZZZZ-DEMO"\nSERVER_URL="https://siem.corp.local:55000"\nHOSTNAME_OVERRIDE="${h}"\n\necho "[*] Detecting OS..."\nif command -v apt &>/dev/null; then\n  PKG_MGR="apt"\nelif command -v yum &>/dev/null; then\n  PKG_MGR="yum"\nfi\n\necho "[*] Adding Sentinel repository..."\ncurl -s https://packages.sentinel.io/GPG-KEY | apt-key add -\necho "deb https://packages.sentinel.io/apt stable main" >> /etc/apt/sources.list\n$PKG_MGR update -y\n$PKG_MGR install -y sentinel-agent\n\necho "[*] Configuring agent..."\ncat > /etc/sentinel/agent.conf << EOF\nserver: $SERVER_URL\nkey: $API_KEY\nhostname: $HOSTNAME_OVERRIDE\nEOF\n\nsystemctl enable sentinel-agent && systemctl start sentinel-agent\necho "[✓] Agent enrolled: $HOSTNAME_OVERRIDE"`,
-
-  macOS: (h) => `#!/bin/bash\n# Sentinel Agent Install — macOS\n# Run with sudo\n\nAPI_KEY="sk-sentinel-XXXX-YYYY-ZZZZ-DEMO"\nSERVER_URL="https://siem.corp.local:55000"\nHOSTNAME_OVERRIDE="${h}"\n\necho "[*] Downloading Sentinel Agent for macOS..."\ncurl -o /tmp/sentinel-agent.pkg \\\n  "https://packages.sentinel.io/macos/sentinel-agent-4.7.2.pkg"\n\necho "[*] Installing package..."\ninstaller -pkg /tmp/sentinel-agent.pkg -target /\n\necho "[*] Writing configuration..."\nmkdir -p /Library/Application\\ Support/Sentinel\ncat > /Library/Application\\ Support/Sentinel/agent.conf << EOF\nserver: $SERVER_URL\nkey: $API_KEY\nhostname: $HOSTNAME_OVERRIDE\nEOF\n\nlaunchctl load /Library/LaunchDaemons/io.sentinel.agent.plist\necho "[✓] Sentinel agent running on $HOSTNAME_OVERRIDE"`,
-};
-
-export default function Assets() {
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+export function Assets() {
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
-  const [wizardOS, setWizardOS] = useState('Windows');
-  const [wizardHost, setWizardHost] = useState('new-endpoint-01');
-  const [copied, setCopied] = useState(false);
+  const [selectedOS, setSelectedOS] = useState<'Windows' | 'Linux' | 'macOS'>('Windows');
+  const [hostname, setHostname] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [localAssets, setLocalAssets] = useState<Asset[]>(assets);
 
-  const filtered = assets.filter(a => {
-    if (search && !a.hostname.toLowerCase().includes(search.toLowerCase()) && !a.ip.includes(search) && !a.department.toLowerCase().includes(search.toLowerCase())) return false;
-    if (typeFilter !== 'all' && a.type !== typeFilter) return false;
-    return true;
-  });
-
-  const handleCopy = () => {
-    const script = installScripts[wizardOS]?.(wizardHost) || '';
-    navigator.clipboard.writeText(script).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleAddAsset = () => {
+    if (hostname) {
+      const newAsset: Asset = {
+        id: `AST-${String(localAssets.length + 1).padStart(3, '0')}`,
+        hostname,
+        ip: `10.0.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 254) + 1}`,
+        os: selectedOS === 'Windows' ? 'Windows 11' : selectedOS === 'macOS' ? 'macOS' : 'Ubuntu',
+        type: 'workstation',
+        status: 'offline',
+        riskScore: 0,
+        agentVersion: '4.8.1',
+        lastSeen: new Date(),
+        tags: ['new', 'pending-enrollment'],
+        owner: 'Unknown',
+        location: 'Unassigned',
+      };
+      setLocalAssets((prev) => [newAsset, ...prev]);
+      setShowWizard(false);
+      setWizardStep(1);
+      setHostname('');
+    }
   };
 
-  const statusColor: Record<string, string> = { online: '#10b981', offline: '#6b7280', warning: '#f97316' };
-
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>Asset Inventory</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>
-            {assets.filter(a => a.status === 'online').length} online · {assets.filter(a => a.status === 'warning').length} warning · {assets.filter(a => a.status === 'offline').length} offline
-          </p>
-        </div>
-        <button
-          onClick={() => { setShowWizard(true); setWizardStep(1); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
-          style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}
-        >
-          <Plus size={16} /> Add Endpoint
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <input
-          type="text"
-          placeholder="Search hostname, IP, department..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="px-3 py-2 rounded-lg text-sm outline-none flex-1 min-w-48"
-          style={{ background: 'hsl(222,33%,14%)', border: '1px solid hsl(222,22%,20%)', color: '#f1f5f9' }}
-        />
-        {['all', 'workstation', 'server', 'network', 'mobile'].map(t => (
-          <button
-            key={t}
-            onClick={() => setTypeFilter(t)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize"
-            style={{
-              background: typeFilter === t ? 'rgba(16,185,129,0.15)' : 'hsl(222,33%,14%)',
-              color: typeFilter === t ? '#10b981' : 'hsl(215,15%,50%)',
-              border: `1px solid ${typeFilter === t ? 'rgba(16,185,129,0.3)' : 'hsl(222,22%,20%)'}`,
-            }}
-          >{t === 'all' ? 'All Types' : t}</button>
+    <div className="space-y-5">
+      {/* Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Assets', value: localAssets.length, color: 'text-white' },
+          { label: 'Online', value: localAssets.filter((a) => a.status === 'online').length, color: 'text-green-400' },
+          { label: 'Warning', value: localAssets.filter((a) => a.status === 'warning').length, color: 'text-yellow-400' },
+          { label: 'Offline', value: localAssets.filter((a) => a.status === 'offline').length, color: 'text-red-400' },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardBody className="py-4">
+              <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+            </CardBody>
+          </Card>
         ))}
       </div>
 
-      {/* Asset Table */}
-      <Card className="overflow-hidden">
-        <div
-          className="grid text-[10px] font-semibold uppercase tracking-wider px-4 py-2.5"
-          style={{ gridTemplateColumns: '40px 150px 120px 100px 100px 100px 100px 100px 1fr', background: 'hsl(222,40%,9%)', borderBottom: '1px solid hsl(222,22%,16%)', color: 'hsl(215,15%,40%)' }}
+      {/* Header Actions */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-white">Asset Inventory ({localAssets.length})</h3>
+        <button
+          onClick={() => { setShowWizard(true); setWizardStep(1); }}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-lg text-sm hover:bg-orange-500/30 transition-colors"
         >
-          <span />
-          <span>HOSTNAME</span>
-          <span>IP ADDRESS</span>
-          <span>OS</span>
-          <span>TYPE</span>
-          <span>STATUS</span>
-          <span>RISK SCORE</span>
-          <span>AGENT VER</span>
-          <span>TAGS</span>
-        </div>
-        {filtered.map((asset, idx) => {
-          const Icon = typeIcons[asset.type] || Server;
-          return (
-            <div
-              key={asset.id}
-              className="grid items-center px-4 py-3 text-xs border-b hover:opacity-90"
-              style={{
-                gridTemplateColumns: '40px 150px 120px 100px 100px 100px 100px 100px 1fr',
-                borderColor: 'hsl(222,22%,13%)',
-                background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-              }}
-            >
-              <Icon size={14} style={{ color: osColors[asset.os] || '#94a3b8' }} />
-              <span className="font-mono font-semibold" style={{ color: '#f1f5f9' }}>{asset.hostname}</span>
-              <span className="font-mono" style={{ color: '#38bdf8' }}>{asset.ip}</span>
-              <span style={{ color: osColors[asset.os] || '#94a3b8' }}>{asset.os}</span>
-              <span className="capitalize" style={{ color: 'hsl(215,20%,60%)' }}>{asset.type}</span>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor[asset.status] }} />
-                <span className="capitalize" style={{ color: statusColor[asset.status] }}>{asset.status}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(222,22%,20%)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${asset.riskScore}%`, background: riskColor(asset.riskScore) }} />
-                </div>
-                <span className="font-mono font-bold w-6 text-right" style={{ color: riskColor(asset.riskScore), fontSize: 11 }}>{asset.riskScore}</span>
-              </div>
-              <span className="font-mono text-[10px]" style={{ color: 'hsl(215,15%,40%)' }}>{asset.agentVersion}</span>
-              <div className="flex gap-1 flex-wrap">
-                {asset.tags.slice(0, 2).map(tag => (
-                  <Badge key={tag} color="#a78bfa" className="text-[10px]">{tag}</Badge>
+          <Plus className="w-4 h-4" /> Add Endpoint
+        </button>
+      </div>
+
+      {/* Asset Table */}
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#1a3050]">
+                {['Status', 'Hostname', 'IP Address', 'OS', 'Type', 'Risk Score', 'Agent', 'Last Seen'].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#475569] uppercase">{h}</th>
                 ))}
-              </div>
-            </div>
-          );
-        })}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#0a1628]">
+              {localAssets.map((asset) => {
+                const { icon: StatusIcon, color } = statusConfig[asset.status];
+                return (
+                  <tr
+                    key={asset.id}
+                    className="hover:bg-[#0a1628] cursor-pointer transition-colors"
+                    onClick={() => setSelectedAsset(selectedAsset?.id === asset.id ? null : asset)}
+                  >
+                    <td className="px-4 py-3">
+                      <StatusIcon className={`w-4 h-4 ${color}`} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-mono text-sm text-white">{asset.hostname}</div>
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {asset.tags.slice(0, 2).map((tag) => (
+                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a3050] text-[#475569]">{tag}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{asset.ip}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
+                        <span>{osIcons[asset.os] || '💻'}</span>
+                        <span>{asset.os}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs capitalize text-[#94a3b8]">{asset.type}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 bg-[#1a3050] rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${riskBg(asset.riskScore)}`} style={{ width: `${asset.riskScore}%` }} />
+                        </div>
+                        <span className={`text-xs font-mono font-semibold ${riskColor(asset.riskScore)}`}>{asset.riskScore}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#475569]">{asset.agentVersion}</td>
+                    <td className="px-4 py-3 text-xs text-[#475569]">{formatDistanceToNow(asset.lastSeen, { addSuffix: true })}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
-      {/* Add Endpoint Wizard Modal */}
+      {/* Add Endpoint Wizard */}
       {showWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
-          <Card className="w-full max-w-2xl mx-4 overflow-hidden">
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid hsl(222,22%,18%)' }}>
-              <div>
-                <h2 className="font-bold" style={{ color: '#f1f5f9' }}>Add New Endpoint</h2>
-                <p className="text-xs mt-0.5" style={{ color: 'hsl(215,15%,45%)' }}>Step {wizardStep} of 3</p>
-              </div>
-              <button onClick={() => setShowWizard(false)}>
-                <X size={18} style={{ color: 'hsl(215,15%,50%)' }} />
-              </button>
-            </div>
-
-            {/* Step progress */}
-            <div className="px-5 py-3 flex gap-2" style={{ borderBottom: '1px solid hsl(222,22%,16%)' }}>
-              {[1,2,3].map(s => (
-                <div key={s} className="flex items-center gap-2 flex-1">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: wizardStep >= s ? '#10b981' : 'hsl(222,22%,20%)', color: wizardStep >= s ? '#fff' : 'hsl(215,15%,45%)' }}
-                  >{s}</div>
-                  <span className="text-xs" style={{ color: wizardStep >= s ? '#10b981' : 'hsl(215,15%,40%)' }}>
-                    {s === 1 ? 'Configure' : s === 2 ? 'Install Script' : 'Verify'}
-                  </span>
-                  {s < 3 && <div className="flex-1 h-0.5 rounded" style={{ background: wizardStep > s ? '#10b981' : 'hsl(222,22%,20%)' }} />}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Add New Endpoint</h3>
+                  <p className="text-xs text-[#475569] mt-0.5">Step {wizardStep} of 3</p>
                 </div>
-              ))}
-            </div>
-
-            <div className="p-5">
+                <button onClick={() => setShowWizard(false)} className="p-1 text-[#475569] hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Progress */}
+              <div className="flex gap-1 mt-3">
+                {[1, 2, 3].map((s) => (
+                  <div key={s} className={`h-1 flex-1 rounded-full ${s <= wizardStep ? 'bg-orange-500' : 'bg-[#1a3050]'}`} />
+                ))}
+              </div>
+            </CardHeader>
+            <CardBody>
               {wizardStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'hsl(215,15%,45%)' }}>Hostname</label>
+                    <label className="block text-xs text-[#94a3b8] mb-2">Hostname</label>
                     <input
                       type="text"
-                      value={wizardHost}
-                      onChange={e => setWizardHost(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none font-mono"
-                      style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,20%)', color: '#f1f5f9' }}
+                      placeholder="e.g., ws-newhost-01"
+                      value={hostname}
+                      onChange={(e) => setHostname(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'hsl(215,15%,45%)' }}>Operating System</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {['Windows', 'Linux', 'macOS'].map(os => (
+                    <label className="block text-xs text-[#94a3b8] mb-2">Operating System</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['Windows', 'Linux', 'macOS'] as const).map((os) => (
                         <button
                           key={os}
-                          onClick={() => setWizardOS(os)}
-                          className="py-3 rounded-lg text-sm font-medium"
-                          style={{
-                            background: wizardOS === os ? 'rgba(16,185,129,0.15)' : 'hsl(222,40%,9%)',
-                            border: `1px solid ${wizardOS === os ? 'rgba(16,185,129,0.4)' : 'hsl(222,22%,20%)'}`,
-                            color: wizardOS === os ? '#10b981' : 'hsl(215,20%,60%)',
-                          }}
-                        >{os}</button>
+                          onClick={() => setSelectedOS(os)}
+                          className={`p-3 rounded-lg border text-sm text-center transition-colors ${
+                            selectedOS === os
+                              ? 'border-orange-500/60 bg-orange-500/10 text-orange-400'
+                              : 'border-[#1a3050] text-[#94a3b8] hover:border-orange-500/30'
+                          }`}
+                        >
+                          <div className="text-2xl mb-1">{os === 'Windows' ? '🪟' : os === 'macOS' ? '🍎' : '🐧'}</div>
+                          {os}
+                        </button>
                       ))}
                     </div>
                   </div>
                   <button
-                    onClick={() => setWizardStep(2)}
-                    className="w-full py-2.5 rounded-lg text-sm font-semibold"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}
-                  >Generate Installation Script →</button>
+                    onClick={() => hostname && setWizardStep(2)}
+                    disabled={!hostname}
+                    className="w-full py-2.5 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    Next <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               )}
 
               {wizardStep === 2 && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm" style={{ color: '#cbd5e1' }}>Run this script on <strong style={{ color: '#10b981' }}>{wizardHost}</strong> ({wizardOS})</p>
-                    <button
-                      onClick={handleCopy}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs"
-                      style={{ background: copied ? 'rgba(16,185,129,0.15)' : 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,20%)', color: copied ? '#10b981' : '#cbd5e1' }}
-                    >
-                      {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
-                    </button>
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Terminal className="w-4 h-4 text-orange-400" />
+                      <span className="text-sm font-medium text-white">Installation Script — {selectedOS}</span>
+                    </div>
+                    <pre className="bg-[#050d1a] border border-[#1a3050] rounded-lg p-4 text-[11px] font-mono text-green-400 overflow-x-auto whitespace-pre-wrap max-h-56 custom-scrollbar">
+                      {installScripts[selectedOS]}
+                    </pre>
                   </div>
-                  <pre
-                    className="font-mono text-xs p-4 rounded-lg overflow-auto custom-scroll"
-                    style={{ background: 'hsl(222,47%,5%)', border: '1px solid hsl(222,22%,16%)', color: '#86efac', maxHeight: 300, lineHeight: 1.7 }}
-                  >{installScripts[wizardOS]?.(wizardHost) || ''}</pre>
-                  <div className="flex gap-3">
-                    <button onClick={() => setWizardStep(1)} className="flex-1 py-2.5 rounded-lg text-sm" style={{ border: '1px solid hsl(222,22%,20%)', color: 'hsl(215,15%,50%)' }}>← Back</button>
-                    <button onClick={() => setWizardStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}>Script Ready →</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => setWizardStep(1)} className="flex-1 py-2.5 border border-[#1a3050] text-[#94a3b8] rounded-lg text-sm hover:text-white transition-colors">Back</button>
+                    <button onClick={() => setWizardStep(3)} className="flex-1 py-2.5 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-500/30 transition-colors">
+                      Script Deployed →
+                    </button>
                   </div>
                 </div>
               )}
 
               {wizardStep === 3 && (
                 <div className="space-y-4 text-center">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: 'rgba(16,185,129,0.15)' }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#10b981' }}>
-                      <Check size={18} className="text-white" />
-                    </div>
+                  <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center mx-auto">
+                    <Monitor className="w-8 h-8 text-green-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg" style={{ color: '#f1f5f9' }}>Awaiting Agent Check-in</h3>
-                    <p className="text-sm mt-1" style={{ color: 'hsl(215,15%,50%)' }}>
-                      Run the script on <strong style={{ color: '#10b981' }}>{wizardHost}</strong>. The agent will appear in this inventory within 60 seconds of installation.
-                    </p>
+                    <h4 className="text-base font-semibold text-white">Enrollment Pending</h4>
+                    <p className="text-sm text-[#94a3b8] mt-1">Agent script deployed to <span className="font-mono text-orange-400">{hostname}</span>. Waiting for check-in...</p>
                   </div>
-                  <div className="text-xs px-4 py-3 rounded-lg text-left space-y-1 font-mono" style={{ background: 'hsl(222,40%,9%)', border: '1px solid hsl(222,22%,16%)', color: '#10b981' }}>
-                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>[waiting]</span> Listening for agent beacon on :55000...</div>
-                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>[info]</span>   Enrollment token expires in 24h</div>
-                    <div><span style={{ color: 'hsl(215,15%,40%)' }}>[info]</span>   Expected hostname: {wizardHost}</div>
+                  <div className="bg-[#050d1a] border border-[#1a3050] rounded-lg p-3 text-left">
+                    <div className="text-xs font-mono text-[#475569] space-y-1">
+                      <div className="text-green-400">✓ Enrollment key generated</div>
+                      <div className="text-green-400">✓ Installation script created</div>
+                      <div className="text-yellow-400">⏳ Waiting for agent check-in...</div>
+                    </div>
                   </div>
-                  <button onClick={() => setShowWizard(false)} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', color: '#fff' }}>
-                    Close & Monitor
+                  <button onClick={handleAddAsset} className="w-full py-2.5 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-500/30 transition-colors">
+                    Add to Inventory
                   </button>
                 </div>
               )}
-            </div>
+            </CardBody>
           </Card>
         </div>
       )}
