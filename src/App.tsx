@@ -33,14 +33,3 @@ export default function App() {
     </HashRouter>
   );
 }
-import { HashRouter } from "react-router-dom";
-
-function App() {
-  return (
-    <HashRouter>
-      {/* your routes */}
-    </HashRouter>
-  );
-}
-
-export default App;
