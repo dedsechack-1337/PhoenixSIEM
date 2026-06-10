@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Zap, Eye, EyeOff, Shield, Lock, User } from 'lucide-react';
+import { Zap, Eye, EyeOff, Shield, Lock, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function Login() {
@@ -35,11 +35,13 @@ export function Login() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="relative flex items-center justify-center w-16 h-16 mb-4">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 opacity-20 blur-md" />
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500/30 to-red-600/30 border border-orange-500/40">
-              <Flame className="w-8 h-8 text-orange-400" />
-            </div>
+          <div className="relative flex items-center justify-center w-20 h-20 mb-4">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-red-600 opacity-10 blur-xl" />
+            <img
+              src="phoenix-logo.png"
+              alt="PhoenixSIEM"
+              className="relative w-20 h-20 object-contain drop-shadow-[0_0_16px_rgba(249,115,22,0.7)]"
+            />
           </div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-white tracking-tight">PhoenixSIEM</h1>
