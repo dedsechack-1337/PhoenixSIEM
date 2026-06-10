@@ -1,14 +1,18 @@
 import { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Zap, Eye, EyeOff, Shield, Lock, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function Login() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +20,11 @@ export function Login() {
     setLoading(true);
     const ok = await login(username, password);
     setLoading(false);
-    if (!ok) setError('Invalid credentials. Check username and password.');
+    if (ok) {
+      navigate('/', { replace: true });
+    } else {
+      setError('Invalid credentials. Check username and password.');
+    }
   };
 
   return (
