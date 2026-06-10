@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ShieldAlert, Bell, Monitor, Globe, Search,
   FolderSearch, Grid3X3, Bug, CheckSquare, UserCheck, ChevronRight,
-  Flame, Zap
+  Flame, Zap, BrainCircuit, Download
 } from 'lucide-react';
 
 const navGroups = [
@@ -32,6 +32,14 @@ const navGroups = [
       { to: '/uba', icon: UserCheck, label: 'User Behavior' },
     ],
   },
+  {
+    label: 'AI & Operations',
+    items: [
+      { to: '/ai-analysis', icon: BrainCircuit, label: 'AI Analysis', badge: 'NEW' },
+      { to: '/notifications', icon: Bell, label: 'Notifications' },
+      { to: '/export', icon: Download, label: 'Export Reports' },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -42,7 +50,6 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-[#1a3050]">
         <div className="relative flex items-center justify-center w-10 h-10">
-          {/* Phoenix flame icon */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 opacity-20 blur-sm" />
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/30 to-red-600/30 border border-orange-500/40">
             <Flame className="w-5 h-5 text-orange-400" />
@@ -77,7 +84,7 @@ export function Sidebar() {
               <span className="text-[10px] font-semibold tracking-widest text-[#475569] uppercase">{group.label}</span>
             </div>
             <ul className="space-y-0.5 px-3">
-              {group.items.map(({ to, icon: Icon, label }) => {
+              {group.items.map(({ to, icon: Icon, label, badge }) => {
                 const isActive = to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
                 return (
                   <li key={to}>
@@ -91,6 +98,9 @@ export function Sidebar() {
                     >
                       <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-orange-400' : 'text-[#475569] group-hover:text-[#94a3b8]'}`} />
                       <span className="text-sm font-medium">{label}</span>
+                      {badge && !isActive && (
+                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 border border-orange-500/40 text-orange-400 tracking-wide">{badge}</span>
+                      )}
                       {isActive && <ChevronRight className="w-3 h-3 ml-auto text-orange-400/60" />}
                     </NavLink>
                   </li>

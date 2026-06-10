@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Events } from './pages/Events';
@@ -11,12 +11,24 @@ import { MitreHeatmap } from './pages/MitreHeatmap';
 import { Vulnerabilities } from './pages/Vulnerabilities';
 import { Compliance } from './pages/Compliance';
 import { UBA } from './pages/UBA';
+import { AIAnalysis } from './pages/AIAnalysis';
+import { Notifications } from './pages/Notifications';
+import { ExportReports } from './pages/ExportReports';
+import { Login } from './pages/Login';
+import { useAuth } from './context/AuthContext';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
           <Route path="/alerts" element={<Alerts />} />
@@ -28,7 +40,11 @@ export default function App() {
           <Route path="/vulnerabilities" element={<Vulnerabilities />} />
           <Route path="/compliance" element={<Compliance />} />
           <Route path="/uba" element={<UBA />} />
+          <Route path="/ai-analysis" element={<AIAnalysis />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/export" element={<ExportReports />} />
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
   );
