@@ -20,7 +20,7 @@ const statusConfig: Record<VulnStatus, { label: string; color: string; icon: typ
   open: { label: 'Open', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: AlertCircle },
   patched: { label: 'Patched', color: 'text-green-400 bg-green-500/10 border-green-500/30', icon: CheckCircle },
   mitigated: { label: 'Mitigated', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', icon: Shield },
-  accepted: { label: 'Risk Accepted', color: 'text-[#475569] bg-[#1a3050]/50 border-[#1a3050]', icon: CheckCircle },
+  accepted: { label: 'Risk Accepted', color: 'text-[#3d5a7a] bg-[#1a3050]/50 border-[rgba(30,63,102,0.5)]', icon: CheckCircle },
 };
 
 export function Vulnerabilities() {
@@ -51,7 +51,7 @@ export function Vulnerabilities() {
           <Card key={s.label}>
             <CardBody className="py-4">
               <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+              <div className="text-xs text-[#3d5a7a] mt-1">{s.label}</div>
             </CardBody>
           </Card>
         ))}
@@ -66,7 +66,7 @@ export function Vulnerabilities() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               filter === s
                 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                : 'bg-[#0d1f35] text-[#94a3b8] border border-[#1a3050] hover:text-white'
+                : 'bg-transparent text-[#8ba8c8] border border-[rgba(30,63,102,0.5)] hover:text-white'
             }`}
           >
             {s === 'all' ? 'All' : statusConfig[s].label}
@@ -83,7 +83,7 @@ export function Vulnerabilities() {
           return (
             <Card key={vuln.id} className={`${vuln.severity === 'critical' && vuln.status === 'open' ? 'border-red-500/30' : ''} transition-colors`}>
               <div
-                className="flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-[#0a1628] rounded-xl transition-colors"
+                className="flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-transparent rounded-xl transition-colors"
                 onClick={() => setExpanded(isExp ? null : vuln.id)}
               >
                 <SeverityBadge severity={vuln.severity} className="mt-0.5 flex-shrink-0" />
@@ -97,7 +97,7 @@ export function Vulnerabilities() {
                           <span className="text-[10px] font-mono text-red-400 bg-red-500/10 border border-red-500/30 px-1.5 py-0.5 rounded">EXPLOIT AVAILABLE</span>
                         )}
                       </div>
-                      <p className="text-xs text-[#94a3b8] mt-1">{vuln.affectedProduct}</p>
+                      <p className="text-xs text-[#8ba8c8] mt-1">{vuln.affectedProduct}</p>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <CvssBar score={vuln.cvss} />
@@ -108,19 +108,19 @@ export function Vulnerabilities() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="text-[10px] text-[#475569]">Affected: {vuln.affectedHosts.join(', ')}</span>
+                    <span className="text-[10px] text-[#3d5a7a]">Affected: {vuln.affectedHosts.join(', ')}</span>
                   </div>
                 </div>
               </div>
 
               {isExp && (
-                <div className="border-t border-[#1a3050] px-5 py-4 bg-[#080f1e] rounded-b-xl space-y-4">
+                <div className="border-t border-[rgba(30,63,102,0.5)] px-5 py-4 bg-transparent rounded-b-xl space-y-4">
                   <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-1">Description</div>
-                    <p className="text-xs text-[#94a3b8]">{vuln.description}</p>
+                    <div className="text-[10px] uppercase tracking-wider text-[#3d5a7a] mb-1">Description</div>
+                    <p className="text-xs text-[#8ba8c8]">{vuln.description}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <ExternalLink className="w-3.5 h-3.5 text-[#475569]" />
+                    <ExternalLink className="w-3.5 h-3.5 text-[#3d5a7a]" />
                     <a
                       href={`https://nvd.nist.gov/vuln/detail/${vuln.cve}`}
                       target="_blank"
@@ -132,30 +132,30 @@ export function Vulnerabilities() {
                     </a>
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-2">Remediation Actions</div>
+                    <div className="text-[10px] uppercase tracking-wider text-[#3d5a7a] mb-2">Remediation Actions</div>
                     <div className="flex gap-2 flex-wrap">
                       <button
                         onClick={(e) => { e.stopPropagation(); updateStatus(vuln.id, 'patched'); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${vuln.status === 'patched' ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'border-[#1a3050] text-[#94a3b8] hover:border-green-500/30 hover:text-green-400'}`}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${vuln.status === 'patched' ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'border-[rgba(30,63,102,0.5)] text-[#8ba8c8] hover:border-green-500/30 hover:text-green-400'}`}
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Mark Patched
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); updateStatus(vuln.id, 'mitigated'); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${vuln.status === 'mitigated' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400' : 'border-[#1a3050] text-[#94a3b8] hover:border-yellow-500/30 hover:text-yellow-400'}`}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${vuln.status === 'mitigated' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400' : 'border-[rgba(30,63,102,0.5)] text-[#8ba8c8] hover:border-yellow-500/30 hover:text-yellow-400'}`}
                       >
                         <Wrench className="w-3.5 h-3.5" /> Mitigate
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); updateStatus(vuln.id, 'accepted'); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${vuln.status === 'accepted' ? 'bg-[#1a3050] border-[#1a3050] text-[#475569]' : 'border-[#1a3050] text-[#94a3b8] hover:text-[#475569]'}`}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${vuln.status === 'accepted' ? 'bg-[#1a3050] border-[rgba(30,63,102,0.5)] text-[#3d5a7a]' : 'border-[rgba(30,63,102,0.5)] text-[#8ba8c8] hover:text-[#3d5a7a]'}`}
                       >
                         Accept Risk
                       </button>
                       {vuln.status !== 'open' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(vuln.id, 'open'); }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1a3050] text-xs text-[#475569] hover:text-red-400 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[rgba(30,63,102,0.5)] text-xs text-[#3d5a7a] hover:text-red-400 transition-colors"
                         >
                           Reopen
                         </button>

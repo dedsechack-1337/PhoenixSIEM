@@ -42,7 +42,7 @@ export function FIM() {
           <Card key={s.label}>
             <CardBody className="py-4">
               <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+              <div className="text-xs text-[#3d5a7a] mt-1">{s.label}</div>
             </CardBody>
           </Card>
         ))}
@@ -67,9 +67,9 @@ export function FIM() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-white">File Integrity Events</h3>
-              <p className="text-xs text-[#475569] mt-0.5">Real-time file system change detection</p>
+              <p className="text-xs text-[#3d5a7a] mt-0.5">Real-time file system change detection</p>
             </div>
-            <FolderSearch className="w-4 h-4 text-[#475569]" />
+            <FolderSearch className="w-4 h-4 text-[#3d5a7a]" />
           </div>
         </CardHeader>
         <div className="divide-y divide-[#0a1628]">
@@ -80,7 +80,7 @@ export function FIM() {
             return (
               <div key={evt.id} className={`transition-colors ${evt.whitelisted ? 'opacity-50' : ''}`}>
                 <div
-                  className="flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-[#0a1628]"
+                  className="flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-transparent"
                   onClick={() => setExpanded(isExpanded ? null : evt.id)}
                 >
                   <SeverityBadge severity={evt.severity} className="mt-0.5 flex-shrink-0" />
@@ -93,11 +93,11 @@ export function FIM() {
                             <ChangeIcon className="w-3 h-3" />
                             {label}
                           </span>
-                          <span className="text-[10px] font-mono text-[#94a3b8]">{evt.host}</span>
+                          <span className="text-[10px] font-mono text-[#8ba8c8]">{evt.host}</span>
                           <span className="text-[#1a3050]">·</span>
-                          <span className="text-[10px] text-[#475569]">user: {evt.user}</span>
+                          <span className="text-[10px] text-[#3d5a7a]">user: {evt.user}</span>
                           <span className="text-[#1a3050]">·</span>
-                          <span className="text-[10px] text-[#475569]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
+                          <span className="text-[10px] text-[#3d5a7a]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -114,7 +114,7 @@ export function FIM() {
                 </div>
 
                 {isExpanded && (
-                  <div className="bg-[#080f1e] border-t border-[#1a3050] px-5 py-4 space-y-3">
+                  <div className="bg-transparent border-t border-[rgba(30,63,102,0.5)] px-5 py-4 space-y-3">
                     {/* Hash Diff */}
                     {(evt.hashOld || evt.hashNew) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -122,7 +122,7 @@ export function FIM() {
                           <div>
                             <div className="flex items-center gap-1.5 mb-1">
                               <Minus className="w-3 h-3 text-red-400" />
-                              <span className="text-[10px] uppercase text-[#475569] tracking-wider">MD5 Before</span>
+                              <span className="text-[10px] uppercase text-[#3d5a7a] tracking-wider">MD5 Before</span>
                             </div>
                             <div className="font-mono text-xs text-red-300 bg-red-500/5 border border-red-500/20 rounded px-3 py-2 break-all">{evt.hashOld}</div>
                           </div>
@@ -131,7 +131,7 @@ export function FIM() {
                           <div>
                             <div className="flex items-center gap-1.5 mb-1">
                               <Plus className="w-3 h-3 text-green-400" />
-                              <span className="text-[10px] uppercase text-[#475569] tracking-wider">MD5 After</span>
+                              <span className="text-[10px] uppercase text-[#3d5a7a] tracking-wider">MD5 After</span>
                             </div>
                             <div className="font-mono text-xs text-green-300 bg-green-500/5 border border-green-500/20 rounded px-3 py-2 break-all">{evt.hashNew}</div>
                           </div>

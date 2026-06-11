@@ -63,7 +63,7 @@ function MessageBubble({ msg }: { msg: Message }) {
         <Flame className="w-3.5 h-3.5 text-orange-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="bg-[#0d1f35] border border-[#1a3050] rounded-2xl rounded-tl-sm px-4 py-3">
+        <div className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-2xl rounded-tl-sm px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider">Phoenix AI</span>
@@ -72,12 +72,12 @@ function MessageBubble({ msg }: { msg: Message }) {
                 <span className="text-[8px] text-orange-400 font-semibold">Sonnet</span>
               </span>
             </div>
-            <button onClick={copy} className="text-[#475569] hover:text-white transition-colors">
+            <button onClick={copy} className="text-[#3d5a7a] hover:text-white transition-colors">
               <Copy className="w-3 h-3" />
             </button>
           </div>
           {copied && <span className="text-[10px] text-green-400">Copied!</span>}
-          <div className="text-sm text-[#e2e8f0] whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+          <div className="text-sm text-[#f0f6ff] whitespace-pre-wrap leading-relaxed">{msg.content}</div>
         </div>
       </div>
     </div>
@@ -142,12 +142,12 @@ ${contextData}`,
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Flame className="w-5 h-5 text-orange-400" /> Phoenix AI — Threat Analysis
           </h2>
-          <p className="text-xs text-[#475569] mt-0.5">Claude-powered SOC analyst with real-time SIEM context</p>
+          <p className="text-xs text-[#3d5a7a] mt-0.5">Claude-powered SOC analyst with real-time SIEM context</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowKeyInput(!showKeyInput)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d1f35] border border-[#1a3050] text-xs text-[#94a3b8] hover:text-white hover:border-orange-500/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)] text-xs text-[#8ba8c8] hover:text-white hover:border-orange-500/30 transition-colors"
           >
             <Shield className="w-3.5 h-3.5" />
             {apiKey ? '✓ API Key Set' : 'Set API Key'}
@@ -156,7 +156,7 @@ ${contextData}`,
           {messages.length > 0 && (
             <button
               onClick={() => setMessages([])}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d1f35] border border-[#1a3050] text-xs text-[#94a3b8] hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)] text-xs text-[#8ba8c8] hover:text-white transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Clear
             </button>
@@ -168,7 +168,7 @@ ${contextData}`,
       {showKeyInput && (
         <Card>
           <CardBody>
-            <p className="text-xs text-[#94a3b8] mb-2">
+            <p className="text-xs text-[#8ba8c8] mb-2">
               Enter your <a href="https://console.anthropic.com" target="_blank" rel="noreferrer" className="text-orange-400 underline">Anthropic API key</a>. It stays in your browser session only — never sent anywhere except Anthropic.
             </p>
             <div className="flex gap-2">
@@ -177,7 +177,7 @@ ${contextData}`,
                 placeholder="sk-ant-..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                className="flex-1 px-3 py-2 bg-[#050d1a] border border-[#1a3050] rounded-lg text-xs text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
+                className="flex-1 px-3 py-2 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg text-xs text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
               />
               <button
                 onClick={() => setShowKeyInput(false)}
@@ -194,8 +194,8 @@ ${contextData}`,
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 text-[#475569]" />
-            <span className="text-xs font-semibold text-[#94a3b8]">Live SIEM Context Loaded</span>
+            <Search className="w-3.5 h-3.5 text-[#3d5a7a]" />
+            <span className="text-xs font-semibold text-[#8ba8c8]">Live SIEM Context Loaded</span>
           </div>
         </CardHeader>
         <CardBody className="pt-2">
@@ -206,9 +206,9 @@ ${contextData}`,
               { label: 'Open Incidents', value: alerts.filter(a => a.status === 'open').length.toString(), color: 'text-yellow-400' },
               { label: 'Events (24h)', value: '3,847', color: 'text-blue-400' },
             ].map((s) => (
-              <div key={s.label} className="text-center py-2 px-3 rounded-lg bg-[#050d1a] border border-[#1a3050]">
+              <div key={s.label} className="text-center py-2 px-3 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)]">
                 <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-[10px] text-[#475569]">{s.label}</div>
+                <div className="text-[10px] text-[#3d5a7a]">{s.label}</div>
               </div>
             ))}
           </div>
@@ -218,8 +218,8 @@ ${contextData}`,
             {securityEvents.filter(e => e.severity === 'critical').slice(0, 3).map(e => (
               <div key={e.id} className="flex items-center gap-2 text-[11px]">
                 <SeverityBadge severity={e.severity} className="flex-shrink-0" />
-                <span className="text-[#94a3b8] truncate">{e.description}</span>
-                <span className="text-[#475569] flex-shrink-0 font-mono">{e.host}</span>
+                <span className="text-[#8ba8c8] truncate">{e.description}</span>
+                <span className="text-[#3d5a7a] flex-shrink-0 font-mono">{e.host}</span>
               </div>
             ))}
           </div>
@@ -229,19 +229,19 @@ ${contextData}`,
       {/* Quick prompts */}
       {messages.length === 0 && (
         <div>
-          <p className="text-xs text-[#475569] mb-3 font-medium uppercase tracking-wider">Quick Analysis Prompts</p>
+          <p className="text-xs text-[#3d5a7a] mb-3 font-medium uppercase tracking-wider">Quick Analysis Prompts</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
             {QUICK_PROMPTS.map((qp) => (
               <button
                 key={qp.label}
                 onClick={() => sendMessage(qp.prompt)}
-                className="text-left px-4 py-3 rounded-xl bg-[#0d1f35] border border-[#1a3050] hover:border-orange-500/30 hover:bg-[#0d1f35] transition-colors group"
+                className="text-left px-4 py-3 rounded-xl bg-transparent border border-[rgba(30,63,102,0.5)] hover:border-orange-500/30 hover:bg-transparent transition-colors group"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Zap className="w-3 h-3 text-orange-400 flex-shrink-0" />
                   <span className="text-xs font-semibold text-white">{qp.label}</span>
                 </div>
-                <p className="text-[11px] text-[#475569] line-clamp-2 group-hover:text-[#94a3b8] transition-colors">{qp.prompt}</p>
+                <p className="text-[11px] text-[#3d5a7a] line-clamp-2 group-hover:text-[#8ba8c8] transition-colors">{qp.prompt}</p>
               </button>
             ))}
           </div>
@@ -261,7 +261,7 @@ ${contextData}`,
                   <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500/30 to-red-600/30 border border-orange-500/40 flex items-center justify-center">
                     <Flame className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
                   </div>
-                  <div className="flex items-center gap-1.5 px-4 py-3 bg-[#0d1f35] border border-[#1a3050] rounded-2xl rounded-tl-sm">
+                  <div className="flex items-center gap-1.5 px-4 py-3 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-2xl rounded-tl-sm">
                     <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -290,7 +290,7 @@ ${contextData}`,
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
           placeholder="Ask Phoenix AI about threats, incidents, or request analysis..."
           disabled={loading}
-          className="flex-1 px-4 py-3 bg-[#080f1e] border border-[#1a3050] rounded-xl text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/10 disabled:opacity-50 transition-colors"
+          className="flex-1 px-4 py-3 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-xl text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/10 disabled:opacity-50 transition-colors"
         />
         <button
           onClick={() => sendMessage(input)}
@@ -300,7 +300,7 @@ ${contextData}`,
           <Send className="w-4 h-4" />
         </button>
       </div>
-      <p className="text-[10px] text-[#475569] text-center">Phoenix AI has access to all current SIEM data. Responses are AI-generated — always verify before acting.</p>
+      <p className="text-[10px] text-[#3d5a7a] text-center">Phoenix AI has access to all current SIEM data. Responses are AI-generated — always verify before acting.</p>
     </div>
   );
 }

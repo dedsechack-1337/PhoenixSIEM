@@ -136,7 +136,7 @@ export function Assets() {
           <Card key={s.label}>
             <CardBody className="py-4">
               <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+              <div className="text-xs text-[#3d5a7a] mt-1">{s.label}</div>
             </CardBody>
           </Card>
         ))}
@@ -158,9 +158,9 @@ export function Assets() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#1a3050]">
+              <tr className="border-b border-[rgba(30,63,102,0.5)]">
                 {['Status', 'Hostname', 'IP Address', 'OS', 'Type', 'Risk Score', 'Agent', 'Last Seen'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#475569] uppercase">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#3d5a7a] uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -170,7 +170,7 @@ export function Assets() {
                 return (
                   <tr
                     key={asset.id}
-                    className="hover:bg-[#0a1628] cursor-pointer transition-colors"
+                    className="hover:bg-transparent cursor-pointer transition-colors"
                     onClick={() => setSelectedAsset(selectedAsset?.id === asset.id ? null : asset)}
                   >
                     <td className="px-4 py-3">
@@ -180,19 +180,19 @@ export function Assets() {
                       <div className="font-mono text-sm text-white">{asset.hostname}</div>
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {asset.tags.slice(0, 2).map((tag) => (
-                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a3050] text-[#475569]">{tag}</span>
+                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a3050] text-[#3d5a7a]">{tag}</span>
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{asset.ip}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#8ba8c8]">{asset.ip}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
+                      <div className="flex items-center gap-2 text-xs text-[#8ba8c8]">
                         <span>{osIcons[asset.os] || '💻'}</span>
                         <span>{asset.os}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs capitalize text-[#94a3b8]">{asset.type}</span>
+                      <span className="text-xs capitalize text-[#8ba8c8]">{asset.type}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -202,8 +202,8 @@ export function Assets() {
                         <span className={`text-xs font-mono font-semibold ${riskColor(asset.riskScore)}`}>{asset.riskScore}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[#475569]">{asset.agentVersion}</td>
-                    <td className="px-4 py-3 text-xs text-[#475569]">{formatDistanceToNow(asset.lastSeen, { addSuffix: true })}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#3d5a7a]">{asset.agentVersion}</td>
+                    <td className="px-4 py-3 text-xs text-[#3d5a7a]">{formatDistanceToNow(asset.lastSeen, { addSuffix: true })}</td>
                   </tr>
                 );
               })}
@@ -220,9 +220,9 @@ export function Assets() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-white">Add New Endpoint</h3>
-                  <p className="text-xs text-[#475569] mt-0.5">Step {wizardStep} of 3</p>
+                  <p className="text-xs text-[#3d5a7a] mt-0.5">Step {wizardStep} of 3</p>
                 </div>
-                <button onClick={() => setShowWizard(false)} className="p-1 text-[#475569] hover:text-white">
+                <button onClick={() => setShowWizard(false)} className="p-1 text-[#3d5a7a] hover:text-white">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -237,17 +237,17 @@ export function Assets() {
               {wizardStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs text-[#94a3b8] mb-2">Hostname</label>
+                    <label className="block text-xs text-[#8ba8c8] mb-2">Hostname</label>
                     <input
                       type="text"
                       placeholder="e.g., ws-newhost-01"
                       value={hostname}
                       onChange={(e) => setHostname(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
+                      className="w-full px-3 py-2 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#94a3b8] mb-2">Operating System</label>
+                    <label className="block text-xs text-[#8ba8c8] mb-2">Operating System</label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['Windows', 'Linux', 'macOS'] as const).map((os) => (
                         <button
@@ -256,7 +256,7 @@ export function Assets() {
                           className={`p-3 rounded-lg border text-sm text-center transition-colors ${
                             selectedOS === os
                               ? 'border-orange-500/60 bg-orange-500/10 text-orange-400'
-                              : 'border-[#1a3050] text-[#94a3b8] hover:border-orange-500/30'
+                              : 'border-[rgba(30,63,102,0.5)] text-[#8ba8c8] hover:border-orange-500/30'
                           }`}
                         >
                           <div className="text-2xl mb-1">{os === 'Windows' ? '🪟' : os === 'macOS' ? '🍎' : '🐧'}</div>
@@ -282,12 +282,12 @@ export function Assets() {
                       <Terminal className="w-4 h-4 text-orange-400" />
                       <span className="text-sm font-medium text-white">Installation Script — {selectedOS}</span>
                     </div>
-                    <pre className="bg-[#050d1a] border border-[#1a3050] rounded-lg p-4 text-[11px] font-mono text-green-400 overflow-x-auto whitespace-pre-wrap max-h-56 custom-scrollbar">
+                    <pre className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg p-4 text-[11px] font-mono text-green-400 overflow-x-auto whitespace-pre-wrap max-h-56 custom-scrollbar">
                       {installScripts[selectedOS]}
                     </pre>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => setWizardStep(1)} className="flex-1 py-2.5 border border-[#1a3050] text-[#94a3b8] rounded-lg text-sm hover:text-white transition-colors">Back</button>
+                    <button onClick={() => setWizardStep(1)} className="flex-1 py-2.5 border border-[rgba(30,63,102,0.5)] text-[#8ba8c8] rounded-lg text-sm hover:text-white transition-colors">Back</button>
                     <button onClick={() => setWizardStep(3)} className="flex-1 py-2.5 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-500/30 transition-colors">
                       Script Deployed →
                     </button>
@@ -302,10 +302,10 @@ export function Assets() {
                   </div>
                   <div>
                     <h4 className="text-base font-semibold text-white">Enrollment Pending</h4>
-                    <p className="text-sm text-[#94a3b8] mt-1">Agent script deployed to <span className="font-mono text-orange-400">{hostname}</span>. Waiting for check-in...</p>
+                    <p className="text-sm text-[#8ba8c8] mt-1">Agent script deployed to <span className="font-mono text-orange-400">{hostname}</span>. Waiting for check-in...</p>
                   </div>
-                  <div className="bg-[#050d1a] border border-[#1a3050] rounded-lg p-3 text-left">
-                    <div className="text-xs font-mono text-[#475569] space-y-1">
+                  <div className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg p-3 text-left">
+                    <div className="text-xs font-mono text-[#3d5a7a] space-y-1">
                       <div className="text-green-400">✓ Enrollment key generated</div>
                       <div className="text-green-400">✓ Installation script created</div>
                       <div className="text-yellow-400">⏳ Waiting for agent check-in...</div>

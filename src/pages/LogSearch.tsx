@@ -44,22 +44,22 @@ export function LogSearch() {
       <Card>
         <CardBody>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 text-xs text-[#475569] font-mono bg-[#050d1a] border border-[#1a3050] rounded px-3 py-1.5">
+            <div className="flex items-center gap-2 text-xs text-[#3d5a7a] font-mono bg-transparent border border-[rgba(30,63,102,0.5)] rounded px-3 py-1.5">
               <Terminal className="w-3.5 h-3.5 text-orange-400" />
               <span className="text-orange-400">phoenix-siem</span>
-              <span className="text-[#475569]">~</span>
+              <span className="text-[#3d5a7a]">~</span>
               <span className="text-green-400">$</span>
-              <span className="text-[#475569] ml-1">search --index all --timerange 24h</span>
+              <span className="text-[#3d5a7a] ml-1">search --index all --timerange 24h</span>
             </div>
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#475569]" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3d5a7a]" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && doSearch(query)}
                 placeholder='Search raw logs... e.g. "Failed password root" OR host:bastion-01 OR severity:critical'
-                className="w-full pl-11 pr-24 py-3.5 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50 font-mono"
+                className="w-full pl-11 pr-24 py-3.5 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50 font-mono"
               />
               <button
                 onClick={() => doSearch(query)}
@@ -70,12 +70,12 @@ export function LogSearch() {
             </div>
             {/* Quick Filters */}
             <div className="flex gap-2 flex-wrap items-center">
-              <span className="text-[10px] text-[#475569] uppercase tracking-wider">Quick Filters:</span>
+              <span className="text-[10px] text-[#3d5a7a] uppercase tracking-wider">Quick Filters:</span>
               {quickFilters.map((f) => (
                 <button
                   key={f.label}
                   onClick={() => { setQuery(f.query); doSearch(f.query); }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0d1f35] border border-[#1a3050] text-[11px] text-[#94a3b8] hover:text-white hover:border-orange-500/30 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)] text-[11px] text-[#8ba8c8] hover:text-white hover:border-orange-500/30 transition-colors"
                 >
                   <ChevronRight className="w-3 h-3" />
                   {f.label}
@@ -91,7 +91,7 @@ export function LogSearch() {
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
-            <span className="text-sm text-[#475569] font-mono">Searching event logs...</span>
+            <span className="text-sm text-[#3d5a7a] font-mono">Searching event logs...</span>
           </div>
         </div>
       ) : submitted && (
@@ -100,30 +100,30 @@ export function LogSearch() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-white">Search Results</h3>
-                <p className="text-xs text-[#475569] mt-0.5">
+                <p className="text-xs text-[#3d5a7a] mt-0.5">
                   Found <span className="text-orange-400 font-mono">{results.length}</span> events matching <span className="font-mono text-white">"{submitted}"</span>
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-[#475569]" />
-                <span className="text-xs text-[#475569]">Last 24 hours</span>
+                <Clock className="w-3.5 h-3.5 text-[#3d5a7a]" />
+                <span className="text-xs text-[#3d5a7a]">Last 24 hours</span>
               </div>
             </div>
           </CardHeader>
           <div className="divide-y divide-[#0a1628]">
             {results.map((evt) => (
-              <div key={evt.id} className="px-5 py-4 hover:bg-[#0a1628] transition-colors">
+              <div key={evt.id} className="px-5 py-4 hover:bg-transparent transition-colors">
                 <div className="flex items-start gap-3">
                   <SeverityBadge severity={evt.severity} className="mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-white">{evt.description}</span>
-                      <span className="text-xs text-[#475569] font-mono flex-shrink-0">{format(evt.timestamp, 'HH:mm:ss')}</span>
+                      <span className="text-xs text-[#3d5a7a] font-mono flex-shrink-0">{format(evt.timestamp, 'HH:mm:ss')}</span>
                     </div>
-                    <div className="mt-1.5 font-mono text-xs text-green-400 bg-[#050d1a] border border-[#1a3050] rounded px-3 py-2 break-all">
+                    <div className="mt-1.5 font-mono text-xs text-green-400 bg-transparent border border-[rgba(30,63,102,0.5)] rounded px-3 py-2 break-all">
                       {evt.raw}
                     </div>
-                    <div className="flex items-center gap-3 mt-2 text-[10px] text-[#475569]">
+                    <div className="flex items-center gap-3 mt-2 text-[10px] text-[#3d5a7a]">
                       <span className="font-mono">{evt.id}</span>
                       <span>·</span>
                       <span className="font-mono">{evt.host}</span>
@@ -143,12 +143,12 @@ export function LogSearch() {
 
       {!submitted && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#0d1f35] border border-[#1a3050] flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-[#475569]" />
+          <div className="w-16 h-16 rounded-full bg-transparent border border-[rgba(30,63,102,0.5)] flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-[#3d5a7a]" />
           </div>
           <div className="text-center">
-            <div className="text-sm font-medium text-[#94a3b8]">Enter a search query to investigate logs</div>
-            <div className="text-xs text-[#475569] mt-1">Supports text search, field filters, and boolean operators</div>
+            <div className="text-sm font-medium text-[#8ba8c8]">Enter a search query to investigate logs</div>
+            <div className="text-xs text-[#3d5a7a] mt-1">Supports text search, field filters, and boolean operators</div>
           </div>
         </div>
       )}

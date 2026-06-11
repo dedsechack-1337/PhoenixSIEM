@@ -18,7 +18,7 @@ const statusConfig: Record<UBAStatus, { label: string; color: string }> = {
   open: { label: 'Open', color: 'text-red-400 bg-red-500/10 border-red-500/30' },
   investigating: { label: 'Investigating', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
   resolved: { label: 'Resolved', color: 'text-green-400 bg-green-500/10 border-green-500/30' },
-  false_positive: { label: 'False Positive', color: 'text-[#475569] bg-[#1a3050]/50 border-[#1a3050]' },
+  false_positive: { label: 'False Positive', color: 'text-[#3d5a7a] bg-[#1a3050]/50 border-[rgba(30,63,102,0.5)]' },
 };
 
 function RiskScore({ score }: { score: number }) {
@@ -71,7 +71,7 @@ export function UBA() {
           <Card key={s.label}>
             <CardBody className="py-4">
               <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+              <div className="text-xs text-[#3d5a7a] mt-1">{s.label}</div>
             </CardBody>
           </Card>
         ))}
@@ -89,7 +89,7 @@ export function UBA() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   filterStatus === s
                     ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                    : 'bg-[#0d1f35] text-[#94a3b8] border border-[#1a3050] hover:text-white'
+                    : 'bg-transparent text-[#8ba8c8] border border-[rgba(30,63,102,0.5)] hover:text-white'
                 }`}
               >
                 {s === 'all' ? 'All' : s === 'false_positive' ? 'False Positive' : statusConfig[s].label}
@@ -104,7 +104,7 @@ export function UBA() {
             return (
               <Card key={evt.id} className={`${evt.riskScore >= 90 ? 'border-red-500/30' : ''} transition-colors`}>
                 <div
-                  className="flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-[#0a1628] rounded-xl transition-colors"
+                  className="flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-transparent rounded-xl transition-colors"
                   onClick={() => setExpanded(isExp ? null : evt.id)}
                 >
                   <RiskScore score={evt.riskScore} />
@@ -116,37 +116,37 @@ export function UBA() {
                             {icon} {typeLabel}
                           </span>
                           <span className="text-sm font-semibold text-white">{evt.username}</span>
-                          <span className="text-[10px] text-[#475569]">{evt.department}</span>
+                          <span className="text-[10px] text-[#3d5a7a]">{evt.department}</span>
                         </div>
-                        <p className="text-xs text-[#94a3b8] mt-1">{evt.description}</p>
+                        <p className="text-xs text-[#8ba8c8] mt-1">{evt.description}</p>
                       </div>
                       <span className={`text-[10px] font-mono px-2 py-1 rounded border ${statusConfig[evt.status].color} flex-shrink-0`}>
                         {statusConfig[evt.status].label}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 mt-1.5">
-                      <span className="text-[10px] font-mono text-[#475569]">{evt.affectedHost}</span>
+                      <span className="text-[10px] font-mono text-[#3d5a7a]">{evt.affectedHost}</span>
                       <span className="text-[#1a3050]">·</span>
-                      <span className="text-[10px] text-[#475569]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
+                      <span className="text-[10px] text-[#3d5a7a]">{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
                     </div>
                   </div>
                 </div>
 
                 {isExp && (
-                  <div className="border-t border-[#1a3050] px-5 py-4 bg-[#080f1e] rounded-b-xl space-y-3">
+                  <div className="border-t border-[rgba(30,63,102,0.5)] px-5 py-4 bg-transparent rounded-b-xl space-y-3">
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-1">Details</div>
-                      <p className="text-xs text-[#94a3b8]">{evt.details}</p>
+                      <div className="text-[10px] uppercase tracking-wider text-[#3d5a7a] mb-1">Details</div>
+                      <p className="text-xs text-[#8ba8c8]">{evt.details}</p>
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-2">Update Status</div>
+                      <div className="text-[10px] uppercase tracking-wider text-[#3d5a7a] mb-2">Update Status</div>
                       <div className="flex gap-2 flex-wrap">
                         {(['open', 'investigating', 'resolved', 'false_positive'] as UBAStatus[]).map((s) => (
                           <button
                             key={s}
                             onClick={(e) => { e.stopPropagation(); updateStatus(evt.id, s); }}
                             className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
-                              evt.status === s ? statusConfig[s].color : 'border-[#1a3050] text-[#475569] hover:text-white'
+                              evt.status === s ? statusConfig[s].color : 'border-[rgba(30,63,102,0.5)] text-[#3d5a7a] hover:text-white'
                             }`}
                           >
                             {s === 'false_positive' ? 'False Positive' : statusConfig[s].label}
@@ -176,7 +176,7 @@ export function UBA() {
                 const bar = score >= 90 ? 'bg-red-500' : score >= 75 ? 'bg-orange-500' : 'bg-yellow-500';
                 return (
                   <div key={user} className="flex items-center gap-3 px-5 py-3">
-                    <span className="text-[10px] font-mono text-[#475569] w-4">#{i + 1}</span>
+                    <span className="text-[10px] font-mono text-[#3d5a7a] w-4">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-mono text-white">{user}</div>
                       <div className="mt-1 h-1 bg-[#1a3050] rounded-full overflow-hidden">
@@ -204,7 +204,7 @@ export function UBA() {
                   if (count === 0) return null;
                   return (
                     <div key={type} className="flex items-center justify-between">
-                      <span className="text-xs text-[#94a3b8]">{cfg.icon} {cfg.label}</span>
+                      <span className="text-xs text-[#8ba8c8]">{cfg.icon} {cfg.label}</span>
                       <span className="text-xs font-mono text-white">{count}</span>
                     </div>
                   );

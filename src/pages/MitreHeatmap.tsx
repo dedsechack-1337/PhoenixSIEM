@@ -8,7 +8,7 @@ function getTotalHits(tactic: typeof mitreTactics[0]) {
 }
 
 function heatColor(hits: number): string {
-  if (hits === 0) return 'bg-[#0a1628] border-[#1a3050] text-[#475569]';
+  if (hits === 0) return 'bg-transparent border-[rgba(30,63,102,0.5)] text-[#3d5a7a]';
   if (hits <= 5) return 'bg-yellow-900/30 border-yellow-700/50 text-yellow-400';
   if (hits <= 10) return 'bg-orange-900/40 border-orange-600/50 text-orange-400';
   return 'bg-red-900/40 border-red-600/50 text-red-400';
@@ -48,7 +48,7 @@ export function MitreHeatmap() {
           <Card key={s.label}>
             <CardBody className="py-4">
               <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+              <div className="text-xs text-[#3d5a7a] mt-1">{s.label}</div>
             </CardBody>
           </Card>
         ))}
@@ -56,16 +56,16 @@ export function MitreHeatmap() {
 
       {/* Legend */}
       <div className="flex items-center gap-6 text-xs">
-        <span className="text-[#475569]">Frequency:</span>
+        <span className="text-[#3d5a7a]">Frequency:</span>
         {[
-          { label: 'None', cls: 'bg-[#0a1628]' },
+          { label: 'None', cls: 'bg-transparent' },
           { label: 'Low (1–5)', cls: 'bg-yellow-500/50' },
           { label: 'Medium (6–10)', cls: 'bg-orange-500/50' },
           { label: 'High (11+)', cls: 'bg-red-500/50' },
         ].map(({ label, cls }) => (
           <div key={label} className="flex items-center gap-2">
             <div className={`w-4 h-4 rounded ${cls}`} />
-            <span className="text-[#94a3b8]">{label}</span>
+            <span className="text-[#8ba8c8]">{label}</span>
           </div>
         ))}
       </div>
@@ -84,7 +84,7 @@ export function MitreHeatmap() {
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-[10px] font-mono text-[#475569] mb-1">{tactic.id}</div>
+                    <div className="text-[10px] font-mono text-[#3d5a7a] mb-1">{tactic.id}</div>
                     <div className="text-sm font-semibold text-white">{tactic.name}</div>
                     <div className="flex items-center gap-2 mt-1.5">
                       <Activity className="w-3 h-3 opacity-60" />
@@ -107,13 +107,13 @@ export function MitreHeatmap() {
               {/* Expanded techniques */}
               {isExpanded && (
                 <div className="border-t border-white/10 px-4 pb-4">
-                  <div className="text-[10px] uppercase tracking-wider text-[#475569] mt-3 mb-2">Techniques Detected</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[#3d5a7a] mt-3 mb-2">Techniques Detected</div>
                   <div className="space-y-2">
                     {tactic.techniques.map((tech) => (
                       <div key={tech.id} className="flex items-center justify-between gap-2">
                         <div>
                           <span className="font-mono text-[10px] text-orange-400">{tech.id}</span>
-                          <span className="text-xs text-[#94a3b8] ml-2">{tech.name}</span>
+                          <span className="text-xs text-[#8ba8c8] ml-2">{tech.name}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">

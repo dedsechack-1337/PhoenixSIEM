@@ -221,7 +221,7 @@ export function ExportReports() {
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Download className="w-5 h-5 text-orange-400" /> Export Reports
         </h2>
-        <p className="text-xs text-[#475569] mt-0.5">Download SIEM data as CSV or HTML reports</p>
+        <p className="text-xs text-[#3d5a7a] mt-0.5">Download SIEM data as CSV or HTML reports</p>
       </div>
 
       {/* Report types */}
@@ -238,8 +238,8 @@ export function ExportReports() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-white">{cfg.label}</h4>
-                    <p className="text-xs text-[#475569] mt-0.5">{cfg.description}</p>
-                    <span className="text-[10px] text-[#475569] font-mono mt-1 block">{cfg.rows} record{cfg.rows !== 1 ? 's' : ''}</span>
+                    <p className="text-xs text-[#3d5a7a] mt-0.5">{cfg.description}</p>
+                    <span className="text-[10px] text-[#3d5a7a] font-mono mt-1 block">{cfg.rows} record{cfg.rows !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
 
@@ -247,14 +247,14 @@ export function ExportReports() {
                   <button
                     onClick={() => exportReport(type, 'csv')}
                     disabled={isGen}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#0d1f35] border border-[#1a3050] text-xs text-[#94a3b8] hover:text-white hover:border-orange-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)] text-xs text-[#8ba8c8] hover:text-white hover:border-orange-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Table className="w-3.5 h-3.5" /> CSV
                   </button>
                   <button
                     onClick={() => exportReport(type, 'pdf')}
                     disabled={isGen}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#0d1f35] border border-[#1a3050] text-xs text-[#94a3b8] hover:text-white hover:border-orange-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)] text-xs text-[#8ba8c8] hover:text-white hover:border-orange-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FileText className="w-3.5 h-3.5" /> HTML Report
                   </button>
@@ -269,7 +269,7 @@ export function ExportReports() {
       <Card>
         <CardHeader>
           <h3 className="text-sm font-semibold text-white">Data Summary</h3>
-          <p className="text-xs text-[#475569] mt-0.5">Current dataset available for export</p>
+          <p className="text-xs text-[#3d5a7a] mt-0.5">Current dataset available for export</p>
         </CardHeader>
         <CardBody>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -279,10 +279,10 @@ export function ExportReports() {
               { label: 'Assets', value: assets.length, sub: `${assets.filter(a=>a.status==='online').length} online` },
               { label: 'Threat IOCs', value: threatIntel.length, sub: `${threatIntel.filter(t=>t.active).length} active` },
             ].map((s) => (
-              <div key={s.label} className="text-center py-3 px-4 rounded-xl bg-[#050d1a] border border-[#1a3050]">
+              <div key={s.label} className="text-center py-3 px-4 rounded-xl bg-transparent border border-[rgba(30,63,102,0.5)]">
                 <div className="text-2xl font-bold text-orange-400">{s.value}</div>
-                <div className="text-xs text-[#94a3b8] mt-0.5">{s.label}</div>
-                <div className="text-[10px] text-[#475569] mt-0.5">{s.sub}</div>
+                <div className="text-xs text-[#8ba8c8] mt-0.5">{s.label}</div>
+                <div className="text-[10px] text-[#3d5a7a] mt-0.5">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -295,15 +295,15 @@ export function ExportReports() {
           <CardHeader>
             <h3 className="text-sm font-semibold text-white">Recent Exports</h3>
           </CardHeader>
-          <div className="divide-y divide-[#1a3050]">
+          <div className="divide-y divide-[rgba(30,63,102,0.4)]">
             {jobs.map((job) => (
               <div key={job.id} className="flex items-center gap-3 px-5 py-3">
                 <div className={`p-1.5 rounded-lg border ${job.format === 'csv' ? 'bg-green-500/10 border-green-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
                   {job.format === 'csv' ? <Table className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-blue-400" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-white">{job.report} <span className="text-[#475569] font-mono uppercase text-[10px]">.{job.format}</span></div>
-                  <div className="text-[10px] text-[#475569]">{job.rows} records · {job.createdAt}{job.size ? ` · ${job.size}` : ''}</div>
+                  <div className="text-xs text-white">{job.report} <span className="text-[#3d5a7a] font-mono uppercase text-[10px]">.{job.format}</span></div>
+                  <div className="text-[10px] text-[#3d5a7a]">{job.rows} records · {job.createdAt}{job.size ? ` · ${job.size}` : ''}</div>
                 </div>
                 {job.status === 'generating' && (
                   <div className="flex items-center gap-1.5 text-[10px] text-orange-400">
@@ -328,14 +328,14 @@ export function ExportReports() {
       <Card className="border-dashed">
         <CardBody>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#0d1f35] border border-[#1a3050]">
-              <Calendar className="w-4 h-4 text-[#475569]" />
+            <div className="p-2 rounded-lg bg-transparent border border-[rgba(30,63,102,0.5)]">
+              <Calendar className="w-4 h-4 text-[#3d5a7a]" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#94a3b8]">Scheduled Reports</p>
-              <p className="text-xs text-[#475569] mt-0.5">Automatic daily/weekly exports via email — configure in Notification Settings</p>
+              <p className="text-sm font-semibold text-[#8ba8c8]">Scheduled Reports</p>
+              <p className="text-xs text-[#3d5a7a] mt-0.5">Automatic daily/weekly exports via email — configure in Notification Settings</p>
             </div>
-            <Clock className="w-4 h-4 text-[#475569] ml-auto flex-shrink-0" />
+            <Clock className="w-4 h-4 text-[#3d5a7a] ml-auto flex-shrink-0" />
           </div>
         </CardBody>
       </Card>

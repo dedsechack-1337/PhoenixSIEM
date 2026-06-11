@@ -39,7 +39,7 @@ function ConfidenceBar({ value }: { value: number }) {
       <div className="w-16 h-1.5 bg-[#1a3050] rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
       </div>
-      <span className="text-xs font-mono text-[#94a3b8]">{value}%</span>
+      <span className="text-xs font-mono text-[#8ba8c8]">{value}%</span>
     </div>
   );
 }
@@ -68,13 +68,13 @@ export function ThreatIntel() {
         {[
           { label: 'Total IOCs', value: threatIntel.length, color: 'text-white' },
           { label: 'Active', value: activeCount, color: 'text-red-400' },
-          { label: 'Inactive', value: threatIntel.length - activeCount, color: 'text-[#475569]' },
+          { label: 'Inactive', value: threatIntel.length - activeCount, color: 'text-[#3d5a7a]' },
           { label: 'Avg Confidence', value: `${Math.round(threatIntel.reduce((s, t) => s + t.confidence, 0) / threatIntel.length)}%`, color: 'text-orange-400' },
         ].map((s) => (
           <Card key={s.label}>
             <CardBody className="py-4">
               <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-[#475569] mt-1">{s.label}</div>
+              <div className="text-xs text-[#3d5a7a] mt-1">{s.label}</div>
             </CardBody>
           </Card>
         ))}
@@ -84,24 +84,24 @@ export function ThreatIntel() {
       <Card>
         <CardBody className="py-3 flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-48">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#475569]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3d5a7a]" />
             <input
               type="text"
               placeholder="Search IOCs, descriptions, tags..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
+              className="w-full pl-9 pr-4 py-2 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
             />
           </div>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value as IOCType | 'all')} className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none">
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value as IOCType | 'all')} className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg px-3 py-2 text-sm text-[#8ba8c8] focus:outline-none">
             <option value="all">All Types</option>
             {(['ip', 'domain', 'md5', 'sha256', 'url', 'email'] as IOCType[]).map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
           </select>
-          <select value={filterCat} onChange={(e) => setFilterCat(e.target.value as ThreatCategory | 'all')} className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none">
+          <select value={filterCat} onChange={(e) => setFilterCat(e.target.value as ThreatCategory | 'all')} className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg px-3 py-2 text-sm text-[#8ba8c8] focus:outline-none">
             <option value="all">All Categories</option>
             {(['malware', 'phishing', 'c2', 'ransomware', 'botnet', 'apt', 'exploit'] as ThreatCategory[]).map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
           </select>
-          <select value={filterActive} onChange={(e) => setFilterActive(e.target.value as 'all' | 'active' | 'inactive')} className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none">
+          <select value={filterActive} onChange={(e) => setFilterActive(e.target.value as 'all' | 'active' | 'inactive')} className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg px-3 py-2 text-sm text-[#8ba8c8] focus:outline-none">
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -114,15 +114,15 @@ export function ThreatIntel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white">IOC Database ({filtered.length})</h3>
-            <Shield className="w-4 h-4 text-[#475569]" />
+            <Shield className="w-4 h-4 text-[#3d5a7a]" />
           </div>
         </CardHeader>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#1a3050]">
+              <tr className="border-b border-[rgba(30,63,102,0.5)]">
                 {['Status', 'Type', 'Indicator', 'Category', 'Confidence', 'Source', 'Last Seen', 'Tags'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#475569] uppercase">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#3d5a7a] uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -130,9 +130,9 @@ export function ThreatIntel() {
               {filtered.map((ioc) => {
                 const TypeIcon = typeIcons[ioc.type];
                 return (
-                  <tr key={ioc.id} className="hover:bg-[#0a1628] transition-colors group">
+                  <tr key={ioc.id} className="hover:bg-transparent transition-colors group">
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded ${ioc.active ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-[#1a3050]/50 text-[#475569] border border-[#1a3050]'}`}>
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded ${ioc.active ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-[#1a3050]/50 text-[#3d5a7a] border border-[rgba(30,63,102,0.5)]'}`}>
                         <Activity className="w-2.5 h-2.5" />
                         {ioc.active ? 'ACTIVE' : 'INACTIVE'}
                       </span>
@@ -145,7 +145,7 @@ export function ThreatIntel() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-mono text-xs text-white max-w-xs truncate" title={ioc.ioc}>{ioc.ioc}</div>
-                      <div className="text-[10px] text-[#475569] mt-0.5 max-w-xs truncate">{ioc.description}</div>
+                      <div className="text-[10px] text-[#3d5a7a] mt-0.5 max-w-xs truncate">{ioc.description}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium capitalize ${catColors[ioc.category]}`}>{ioc.category}</span>
@@ -153,12 +153,12 @@ export function ThreatIntel() {
                     <td className="px-4 py-3">
                       <ConfidenceBar value={ioc.confidence} />
                     </td>
-                    <td className="px-4 py-3 text-xs text-[#94a3b8]">{ioc.source}</td>
-                    <td className="px-4 py-3 text-xs text-[#475569]">{formatDistanceToNow(ioc.lastSeen, { addSuffix: true })}</td>
+                    <td className="px-4 py-3 text-xs text-[#8ba8c8]">{ioc.source}</td>
+                    <td className="px-4 py-3 text-xs text-[#3d5a7a]">{formatDistanceToNow(ioc.lastSeen, { addSuffix: true })}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 flex-wrap">
                         {ioc.tags.map((tag) => (
-                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a3050] text-[#475569]">{tag}</span>
+                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a3050] text-[#3d5a7a]">{tag}</span>
                         ))}
                       </div>
                     </td>

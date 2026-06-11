@@ -39,7 +39,7 @@ export function Compliance() {
   return (
     <div className="space-y-5">
       {/* Overall Score */}
-      <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[#1a3050] bg-[#0d1f35]">
+      <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[rgba(30,63,102,0.5)] bg-transparent">
         <div className="relative w-16 h-16">
           <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
             <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1a3050" strokeWidth="3" />
@@ -57,7 +57,7 @@ export function Compliance() {
         </div>
         <div>
           <div className="text-base font-semibold text-white">Overall Compliance Score</div>
-          <div className="text-xs text-[#94a3b8] mt-0.5">{overallPass}/{complianceChecks.length} controls passing across all frameworks</div>
+          <div className="text-xs text-[#8ba8c8] mt-0.5">{overallPass}/{complianceChecks.length} controls passing across all frameworks</div>
         </div>
       </div>
 
@@ -71,12 +71,12 @@ export function Compliance() {
               key={fw}
               onClick={() => setActiveFramework(activeFramework === fw ? 'all' : fw)}
               className={`rounded-xl border p-4 text-left transition-all ${
-                activeFramework === fw ? color : 'border-[#1a3050] bg-[#0d1f35] hover:border-orange-500/30'
+                activeFramework === fw ? color : 'border-[rgba(30,63,102,0.5)] bg-transparent hover:border-orange-500/30'
               }`}
             >
               <div className="text-sm font-bold text-white">{fw}</div>
               <div className="text-xl font-bold mt-1 text-white">{pct}%</div>
-              <div className="text-[10px] text-[#475569] mt-1">{pass}/{total} passing</div>
+              <div className="text-[10px] text-[#3d5a7a] mt-1">{pass}/{total} passing</div>
               <div className="mt-2 h-1.5 bg-black/20 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
@@ -115,31 +115,31 @@ export function Compliance() {
             return (
               <div key={check.id}>
                 <div
-                  className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-[#0a1628] transition-colors"
+                  className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-transparent transition-colors"
                   onClick={() => setExpanded(isExp ? null : check.id)}
                 >
                   <StatusIcon className={`w-4 h-4 flex-shrink-0 ${color}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${frameworkInfo[check.framework].color}`}>{check.framework}</span>
-                      <span className="text-[10px] font-mono text-[#475569]">{check.control}</span>
+                      <span className="text-[10px] font-mono text-[#3d5a7a]">{check.control}</span>
                       <span className="text-sm text-white">{check.title}</span>
                     </div>
-                    <div className="text-[10px] text-[#475569] mt-0.5">{check.description}</div>
+                    <div className="text-[10px] text-[#3d5a7a] mt-0.5">{check.description}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`text-[10px] font-mono ${color}`}>{label}</span>
-                    <span className="text-[10px] text-[#475569]">{formatDistanceToNow(check.lastChecked, { addSuffix: true })}</span>
-                    {isExp ? <ChevronUp className="w-3.5 h-3.5 text-[#475569]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#475569]" />}
+                    <span className="text-[10px] text-[#3d5a7a]">{formatDistanceToNow(check.lastChecked, { addSuffix: true })}</span>
+                    {isExp ? <ChevronUp className="w-3.5 h-3.5 text-[#3d5a7a]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#3d5a7a]" />}
                   </div>
                 </div>
                 {isExp && check.remediation && (
-                  <div className="bg-[#080f1e] border-t border-[#1a3050] px-6 py-3">
-                    <div className="text-[10px] uppercase tracking-wider text-[#475569] mb-1">Remediation Steps</div>
-                    <p className="text-xs text-[#94a3b8]">{check.remediation}</p>
+                  <div className="bg-transparent border-t border-[rgba(30,63,102,0.5)] px-6 py-3">
+                    <div className="text-[10px] uppercase tracking-wider text-[#3d5a7a] mb-1">Remediation Steps</div>
+                    <p className="text-xs text-[#8ba8c8]">{check.remediation}</p>
                     {check.affectedHosts.length > 0 && (
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="text-[10px] text-[#475569]">Affected:</span>
+                        <span className="text-[10px] text-[#3d5a7a]">Affected:</span>
                         {check.affectedHosts.map((h) => (
                           <span key={h} className="font-mono text-[10px] text-orange-300 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded">{h}</span>
                         ))}

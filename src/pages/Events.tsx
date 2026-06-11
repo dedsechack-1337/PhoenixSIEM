@@ -50,7 +50,7 @@ export function Events() {
   return (
     <div className="space-y-5">
       {/* Ticker */}
-      <div className="overflow-hidden rounded-lg border border-[#1a3050] bg-[#080f1e] py-2">
+      <div className="overflow-hidden rounded-lg border border-[rgba(30,63,102,0.5)] bg-transparent py-2">
         <div className="flex gap-8 animate-none" style={{ whiteSpace: 'nowrap' }}>
           <div className="flex gap-8 px-4">
             {securityEvents.slice(0, 10).map((e) => (
@@ -58,8 +58,8 @@ export function Events() {
                 <span className={`${e.severity === 'critical' ? 'text-red-400' : e.severity === 'high' ? 'text-orange-400' : 'text-yellow-400'}`}>
                   ●
                 </span>
-                <span className="text-[#94a3b8]">{e.description.slice(0, 60)}…</span>
-                <span className="text-[#475569]">{e.host}</span>
+                <span className="text-[#8ba8c8]">{e.description.slice(0, 60)}…</span>
+                <span className="text-[#3d5a7a]">{e.host}</span>
               </span>
             ))}
           </div>
@@ -70,21 +70,21 @@ export function Events() {
       <Card>
         <CardBody className="flex flex-wrap gap-3 items-center py-3">
           <div className="relative flex-1 min-w-48">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#475569]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3d5a7a]" />
             <input
               type="text"
               placeholder="Search events, IPs, hosts, rules..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#050d1a] border border-[#1a3050] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
+              className="w-full pl-9 pr-4 py-2 bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg text-sm text-white placeholder-[#475569] focus:outline-none focus:border-orange-500/50"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-[#475569]" />
+            <Filter className="w-3.5 h-3.5 text-[#3d5a7a]" />
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value as Severity | 'all')}
-              className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none focus:border-orange-500/50"
+              className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg px-3 py-2 text-sm text-[#8ba8c8] focus:outline-none focus:border-orange-500/50"
             >
               <option value="all">All Severities</option>
               {severities.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
@@ -92,14 +92,14 @@ export function Events() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as EventType | 'all')}
-              className="bg-[#050d1a] border border-[#1a3050] rounded-lg px-3 py-2 text-sm text-[#94a3b8] focus:outline-none focus:border-orange-500/50"
+              className="bg-transparent border border-[rgba(30,63,102,0.5)] rounded-lg px-3 py-2 text-sm text-[#8ba8c8] focus:outline-none focus:border-orange-500/50"
             >
               <option value="all">All Types</option>
               {eventTypes.map((t) => <option key={t} value={t}>{typeLabels[t]}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-[#475569] font-mono">{filtered.length} events</span>
+            <span className="text-xs text-[#3d5a7a] font-mono">{filtered.length} events</span>
             <button className="flex items-center gap-1.5 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg text-xs text-orange-400 hover:bg-orange-500/20 transition-colors">
               <RefreshCw className="w-3 h-3" /> Refresh
             </button>
@@ -124,9 +124,9 @@ export function Events() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#1a3050]">
+              <tr className="border-b border-[rgba(30,63,102,0.5)]">
                 {['Severity', 'Type', 'Description', 'Source IP', 'Host', 'Rule', 'Time'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#475569] uppercase">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold tracking-wider text-[#3d5a7a] uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -135,7 +135,7 @@ export function Events() {
                 <>
                   <tr
                     key={evt.id}
-                    className="hover:bg-[#0a1628] cursor-pointer transition-colors"
+                    className="hover:bg-transparent cursor-pointer transition-colors"
                     onClick={() => setExpandedId(expandedId === evt.id ? null : evt.id)}
                   >
                     <td className="px-4 py-3"><SeverityBadge severity={evt.severity} /></td>
@@ -147,28 +147,28 @@ export function Events() {
                     <td className="px-4 py-3 max-w-xs">
                       <div className="text-xs text-white truncate">{evt.description}</div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{evt.source}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{evt.host}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-[#475569]">{evt.ruleId}</td>
-                    <td className="px-4 py-3 text-xs text-[#475569] whitespace-nowrap">
+                    <td className="px-4 py-3 font-mono text-xs text-[#8ba8c8]">{evt.source}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#8ba8c8]">{evt.host}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#3d5a7a]">{evt.ruleId}</td>
+                    <td className="px-4 py-3 text-xs text-[#3d5a7a] whitespace-nowrap">
                       {formatDistanceToNow(evt.timestamp, { addSuffix: true })}
                     </td>
                     <td className="px-4 py-3">
-                      <ChevronDown className={`w-3.5 h-3.5 text-[#475569] transition-transform ${expandedId === evt.id ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 text-[#3d5a7a] transition-transform ${expandedId === evt.id ? 'rotate-180' : ''}`} />
                     </td>
                   </tr>
                   {expandedId === evt.id && (
-                    <tr key={`${evt.id}-detail`} className="bg-[#080f1e]">
+                    <tr key={`${evt.id}-detail`} className="bg-transparent">
                       <td colSpan={8} className="px-6 py-4">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Event ID</div><div className="text-xs font-mono text-[#94a3b8]">{evt.id}</div></div>
-                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Timestamp</div><div className="text-xs font-mono text-[#94a3b8]">{format(evt.timestamp, 'yyyy-MM-dd HH:mm:ss')}</div></div>
-                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">User</div><div className="text-xs font-mono text-[#94a3b8]">{evt.user || 'N/A'}</div></div>
-                          <div><div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Destination</div><div className="text-xs font-mono text-[#94a3b8]">{evt.destination || 'N/A'}</div></div>
+                          <div><div className="text-[10px] text-[#3d5a7a] uppercase tracking-wider mb-1">Event ID</div><div className="text-xs font-mono text-[#8ba8c8]">{evt.id}</div></div>
+                          <div><div className="text-[10px] text-[#3d5a7a] uppercase tracking-wider mb-1">Timestamp</div><div className="text-xs font-mono text-[#8ba8c8]">{format(evt.timestamp, 'yyyy-MM-dd HH:mm:ss')}</div></div>
+                          <div><div className="text-[10px] text-[#3d5a7a] uppercase tracking-wider mb-1">User</div><div className="text-xs font-mono text-[#8ba8c8]">{evt.user || 'N/A'}</div></div>
+                          <div><div className="text-[10px] text-[#3d5a7a] uppercase tracking-wider mb-1">Destination</div><div className="text-xs font-mono text-[#8ba8c8]">{evt.destination || 'N/A'}</div></div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-[#475569] uppercase tracking-wider mb-1">Raw Log</div>
-                          <div className="font-mono text-xs text-green-400 bg-[#050d1a] border border-[#1a3050] rounded px-4 py-3 break-all">{evt.raw}</div>
+                          <div className="text-[10px] text-[#3d5a7a] uppercase tracking-wider mb-1">Raw Log</div>
+                          <div className="font-mono text-xs text-green-400 bg-transparent border border-[rgba(30,63,102,0.5)] rounded px-4 py-3 break-all">{evt.raw}</div>
                         </div>
                       </td>
                     </tr>
@@ -178,7 +178,7 @@ export function Events() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div className="py-16 text-center text-[#475569] text-sm">No events match your filters</div>
+            <div className="py-16 text-center text-[#3d5a7a] text-sm">No events match your filters</div>
           )}
         </div>
       </Card>
