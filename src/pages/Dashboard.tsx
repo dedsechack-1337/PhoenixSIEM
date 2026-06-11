@@ -24,7 +24,7 @@ export function Dashboard() {
   const openAlerts = alerts.filter(a => a.status === 'open' || a.status === 'acknowledged').slice(0, 5);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
 
       {/* AI Banner */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12,
@@ -66,7 +66,7 @@ export function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', gap: 20 }}>
         {/* Timeline */}
         <Card>
           <CardHeader>
@@ -127,7 +127,7 @@ export function Dashboard() {
       </div>
 
       {/* Bottom Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 20 }}>
         {/* Recent Events */}
         <Card>
           <CardHeader>

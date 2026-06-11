@@ -281,6 +281,8 @@ body::before {
 
 /* ─── LOGIN PANEL 3D ─────────────────────────────────────────────────────── */
 .login-panel {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(
     160deg,
     rgba(10, 22, 44, 0.98) 0%,
@@ -348,8 +350,8 @@ body::after {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
+    rgba(0, 0, 0, 0.015) 2px,
+    rgba(0, 0, 0, 0.015) 4px
   );
 }
 
@@ -386,3 +388,7 @@ body::after {
 .custom-scrollbar::-webkit-scrollbar       { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--bg-border-hi); border-radius: 2px; }
+
+input::placeholder { color: #3d5a7a; }
+input:focus { outline: none; }
+button:focus { outline: none; }

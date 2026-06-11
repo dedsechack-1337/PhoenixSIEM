@@ -3,6 +3,99 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { Zap, Eye, EyeOff, Shield, Lock, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const s: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 24, background: 'var(--bg-void)', position: 'relative', overflow: 'hidden',
+  },
+  grid: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    backgroundImage: 'radial-gradient(circle, rgba(30,63,102,0.45) 1px, transparent 1px)',
+    backgroundSize: '28px 28px',
+  },
+  glow1: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255,107,26,0.07) 0%, transparent 65%)',
+  },
+  glow2: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    background: 'radial-gradient(ellipse 50% 50% at 50% 100%, rgba(0,180,255,0.04) 0%, transparent 60%)',
+  },
+  wrap: { position: 'relative', zIndex: 1, width: '100%', maxWidth: 420 },
+  logoArea: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 },
+  logoRing: { position: 'relative', width: 88, height: 88, marginBottom: 18 },
+  logoGlow: { position: 'absolute', inset: -8, borderRadius: '50%', background: 'rgba(255,107,26,0.18)', filter: 'blur(16px)' },
+  logoImg: { position: 'relative', width: 88, height: 88, objectFit: 'contain',
+    filter: 'drop-shadow(0 0 10px rgba(255,107,26,0.75)) drop-shadow(0 0 28px rgba(255,107,26,0.35))' },
+  titleRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 },
+  title: { fontSize: 24, fontWeight: 800, color: '#f0f6ff', letterSpacing: '-0.02em', margin: 0 },
+  aiBadge: { display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 8px',
+    borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
+    background: 'rgba(255,107,26,0.14)', border: '1px solid rgba(255,107,26,0.4)',
+    color: '#ff8c3a', boxShadow: '0 0 10px rgba(255,107,26,0.2)' },
+  subtitle: { fontSize: 11, fontFamily: 'monospace', color: '#3d5a7a', margin: 0 },
+  card: {
+    background: 'linear-gradient(160deg, rgba(10,22,44,0.98) 0%, rgba(4,10,22,0.99) 100%)',
+    border: '1px solid rgba(30,63,102,0.55)',
+    borderRadius: 18,
+    padding: 32,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(1,4,9,0.8), 0 24px 64px rgba(1,4,9,0.5)',
+  },
+  cardTopLine: {
+    display: 'block', height: 1, marginBottom: 24, borderRadius: 99,
+    background: 'linear-gradient(90deg, transparent, rgba(255,107,26,0.35), transparent)',
+  },
+  authRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 },
+  authTitle: { fontSize: 13, fontWeight: 600, color: '#f0f6ff', margin: 0, flex: 1 },
+  authBadge: { fontSize: 10, fontFamily: 'monospace', color: '#3d5a7a' },
+  fieldWrap: { marginBottom: 16 },
+  label: { display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em', color: '#3d5a7a', marginBottom: 6 },
+  inputWrap: { position: 'relative' },
+  inputIcon: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+    width: 15, height: 15, color: '#3d5a7a', pointerEvents: 'none' as const },
+  input: {
+    width: '100%', boxSizing: 'border-box' as const,
+    paddingLeft: 38, paddingRight: 16, paddingTop: 12, paddingBottom: 12,
+    fontSize: 13, color: '#f0f6ff', borderRadius: 10,
+    background: 'linear-gradient(145deg, rgba(1,4,9,0.8), rgba(3,9,18,0.6))',
+    border: '1px solid rgba(30,63,102,0.6)',
+    boxShadow: 'inset 0 2px 4px rgba(1,4,9,0.5)',
+    outline: 'none', fontFamily: 'inherit',
+  },
+  inputPr: { paddingRight: 40 },
+  eyeBtn: { position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+    background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#3d5a7a' },
+  errorBox: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+    borderRadius: 8, marginBottom: 16,
+    background: 'rgba(255,32,64,0.08)', border: '1px solid rgba(255,32,64,0.3)' },
+  errorDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+    background: '#ff2040', boxShadow: '0 0 6px rgba(255,32,64,0.8)' },
+  errorText: { fontSize: 12, color: '#ff6080' },
+  submitBtn: {
+    width: '100%', padding: '13px 0', borderRadius: 10, fontSize: 13, fontWeight: 700,
+    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    background: 'linear-gradient(145deg, rgba(255,107,26,0.28), rgba(200,60,0,0.18))',
+    border: '1px solid rgba(255,107,26,0.45)', color: '#ff8c3a',
+    boxShadow: 'inset 0 1px 0 rgba(255,180,102,0.12), 0 2px 8px rgba(255,107,26,0.18)',
+    transition: 'all 0.2s',
+  },
+  divider: { height: 1, background: 'rgba(30,63,102,0.4)', margin: '24px 0' },
+  demoLabel: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase' as const,
+    letterSpacing: '0.12em', color: '#3d5a7a', marginBottom: 12 },
+  demoBtn: {
+    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '9px 12px', borderRadius: 8, marginBottom: 8, cursor: 'pointer',
+    background: 'rgba(8,20,42,0.7)', border: '1px solid rgba(30,63,102,0.4)',
+    textAlign: 'left' as const, transition: 'all 0.15s',
+  },
+  demoUser: { fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: '#ff8c3a' },
+  demoPass: { fontSize: 10, fontFamily: 'monospace', color: '#3d5a7a', marginLeft: 8 },
+  demoRole: { fontSize: 10, color: '#3d5a7a' },
+  footer: { textAlign: 'center' as const, fontSize: 10, fontFamily: 'monospace', color: '#3d5a7a', marginTop: 20 },
+  spinner: { width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,140,58,0.25)', borderTopColor: '#ff8c3a', animation: 'spin 0.7s linear infinite' },
+};
+
 export function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -20,146 +113,113 @@ export function Login() {
     setLoading(true);
     const ok = await login(username, password);
     setLoading(false);
-    if (ok) {
-      navigate('/', { replace: true });
-    } else {
-      setError('Invalid credentials. Check username and password.');
-    }
+    if (ok) navigate('/', { replace: true });
+    else setError('Invalid credentials. Check username and password.');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: 'var(--bg-void)' }}>
+    <div style={s.page}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={s.grid} />
+      <div style={s.glow1} />
+      <div style={s.glow2} />
 
-      {/* HDR background layers */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle, rgba(30,63,102,0.5) 1px, transparent 1px)',
-        backgroundSize: '28px 28px'
-      }} />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(255,107,26,0.06) 0%, transparent 60%)'
-      }} />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse 50% 50% at 50% 100%, rgba(0,180,255,0.03) 0%, transparent 60%)'
-      }} />
-      {/* Corner accent glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 pointer-events-none"
-        style={{ background: 'linear-gradient(180deg, rgba(255,107,26,0.4), transparent)' }} />
-
-      <div className="relative z-10 w-full max-w-md">
-        {/* Logo block */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="relative w-24 h-24 mb-5">
-            <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: 'rgba(255,107,26,0.25)' }} />
-            <div className="absolute inset-0 rounded-full blur-md animate-glow" style={{ background: 'rgba(255,107,26,0.15)' }} />
-            <img src="phoenix-logo.png" alt="PhoenixSIEM" className="relative w-24 h-24 object-contain"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(255,107,26,0.8)) drop-shadow(0 0 32px rgba(255,107,26,0.4)) drop-shadow(0 0 48px rgba(255,107,26,0.15))' }} />
+      <div style={s.wrap}>
+        {/* Logo */}
+        <div style={s.logoArea}>
+          <div style={s.logoRing}>
+            <div style={s.logoGlow} />
+            <img src="phoenix-logo.png" alt="PhoenixSIEM" style={s.logoImg} />
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#f0f6ff' }}>PhoenixSIEM</h1>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide"
-              style={{ background: 'rgba(255,107,26,0.15)', border: '1px solid rgba(255,107,26,0.4)',
-                color: '#ff8c3a', boxShadow: '0 0 10px rgba(255,107,26,0.25)' }}>
-              <Zap className="w-3 h-3" />AI
+          <div style={s.titleRow}>
+            <h1 style={s.title}>PhoenixSIEM</h1>
+            <span style={s.aiBadge}>
+              <Zap size={10} />AI
             </span>
           </div>
-          <p className="text-xs font-mono" style={{ color: '#3d5a7a' }}>Enterprise Security Operations Center</p>
+          <p style={s.subtitle}>Enterprise Security Operations Center</p>
         </div>
 
-        {/* Login card */}
-        <div className="login-panel p-8">
-          {/* Top accent line */}
-          <div className="absolute top-0 left-8 right-8 h-px rounded-full"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,107,26,0.4), transparent)' }} />
+        {/* Card */}
+        <div style={s.card}>
+          <span style={s.cardTopLine} />
 
-          <div className="flex items-center gap-2 mb-6">
-            <Shield className="w-4 h-4" style={{ color: '#ff8c3a' }} />
-            <h2 className="text-sm font-semibold" style={{ color: '#f0f6ff' }}>Secure Authentication</h2>
-            <span className="ml-auto text-[10px] font-mono" style={{ color: '#3d5a7a' }}>TLS 1.3 ENCRYPTED</span>
+          <div style={s.authRow}>
+            <Shield size={15} color="#ff8c3a" />
+            <p style={s.authTitle}>Secure Authentication</p>
+            <span style={s.authBadge}>TLS 1.3</span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit}>
             {/* Username */}
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#3d5a7a' }}>Username</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#3d5a7a' }} />
+            <div style={s.fieldWrap}>
+              <label style={s.label}>Username</label>
+              <div style={s.inputWrap}>
+                <User size={15} style={s.inputIcon} />
                 <input type="text" value={username} onChange={e => setUsername(e.target.value)}
-                  placeholder="analyst1" required
-                  className="input-3d w-full pl-10 pr-4 py-3 text-sm"
-                  style={{ color: '#f0f6ff' }} />
+                  placeholder="analyst1" required style={s.input}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(255,107,26,0.5)'; e.target.style.boxShadow = 'inset 0 2px 4px rgba(1,4,9,0.5), 0 0 0 3px rgba(255,107,26,0.07)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(30,63,102,0.6)'; e.target.style.boxShadow = 'inset 0 2px 4px rgba(1,4,9,0.5)'; }} />
               </div>
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#3d5a7a' }}>Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#3d5a7a' }} />
+            <div style={s.fieldWrap}>
+              <label style={s.label}>Password</label>
+              <div style={s.inputWrap}>
+                <Lock size={15} style={s.inputIcon} />
                 <input type={showPass ? 'text' : 'password'} value={password}
                   onChange={e => setPassword(e.target.value)} placeholder="••••••••" required
-                  className="input-3d w-full pl-10 pr-10 py-3 text-sm"
-                  style={{ color: '#f0f6ff' }} />
-                <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: '#3d5a7a' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#f0f6ff')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#3d5a7a')}>
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  style={{ ...s.input, ...s.inputPr }}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(255,107,26,0.5)'; e.target.style.boxShadow = 'inset 0 2px 4px rgba(1,4,9,0.5), 0 0 0 3px rgba(255,107,26,0.07)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(30,63,102,0.6)'; e.target.style.boxShadow = 'inset 0 2px 4px rgba(1,4,9,0.5)'; }} />
+                <button type="button" onClick={() => setShowPass(!showPass)} style={s.eyeBtn}>
+                  {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                style={{ background: 'rgba(255,32,64,0.08)', border: '1px solid rgba(255,32,64,0.3)',
-                  boxShadow: '0 0 16px rgba(255,32,64,0.1)' }}>
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#ff2040', boxShadow: '0 0 6px rgba(255,32,64,0.8)' }} />
-                <span className="text-xs" style={{ color: '#ff6080' }}>{error}</span>
+              <div style={s.errorBox}>
+                <div style={s.errorDot} />
+                <span style={s.errorText}>{error}</span>
               </div>
             )}
 
             {/* Submit */}
-            <button type="submit" disabled={loading}
-              className="btn-hdr w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? (
-                <><span className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,140,58,0.3)', borderTopColor: '#ff8c3a' }} />Authenticating...</>
-              ) : (
-                <><Shield className="w-4 h-4" />Sign In to SOC</>
-              )}
+            <button type="submit" disabled={loading} style={{ ...s.submitBtn, opacity: loading ? 0.6 : 1 }}>
+              {loading
+                ? <><div style={s.spinner} />Authenticating...</>
+                : <><Shield size={14} />Sign In to SOC</>}
             </button>
           </form>
 
+          {/* Divider */}
+          <div style={s.divider} />
+
           {/* Demo credentials */}
-          <div className="mt-6 pt-5" style={{ borderTop: '1px solid rgba(30,63,102,0.4)' }}>
-            <p className="text-[9px] font-bold uppercase tracking-widest mb-3" style={{ color: '#3d5a7a' }}>Demo Credentials</p>
-            <div className="space-y-1.5">
-              {[
-                { user: 'analyst1',  pass: 'soc@1337',   role: 'SOC Analyst L2' },
-                { user: 'admin',     pass: 'admin@1337', role: 'SOC Administrator' },
-                { user: 'viewer',    pass: 'view@1337',  role: 'Read-Only Analyst' },
-              ].map(c => (
-                <button key={c.user} type="button"
-                  onClick={() => { setUsername(c.user); setPassword(c.pass); setError(''); }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all text-left"
-                  style={{ background: 'rgba(8,20,42,0.8)', border: '1px solid rgba(30,63,102,0.4)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,107,26,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,107,26,0.04)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(30,63,102,0.4)'; (e.currentTarget as HTMLElement).style.background = 'rgba(8,20,42,0.8)'; }}>
-                  <div>
-                    <span className="text-xs font-mono font-bold" style={{ color: '#ff8c3a' }}>{c.user}</span>
-                    <span className="text-[10px] font-mono ml-2" style={{ color: '#3d5a7a' }}>/ {c.pass}</span>
-                  </div>
-                  <span className="text-[10px]" style={{ color: '#3d5a7a' }}>{c.role}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <p style={s.demoLabel}>Demo Credentials</p>
+          {[
+            { user: 'analyst1', pass: 'soc@1337',   role: 'SOC Analyst L2' },
+            { user: 'admin',    pass: 'admin@1337', role: 'SOC Admin' },
+            { user: 'viewer',   pass: 'view@1337',  role: 'Read-Only' },
+          ].map(c => (
+            <button key={c.user} type="button"
+              onClick={() => { setUsername(c.user); setPassword(c.pass); setError(''); }}
+              style={s.demoBtn}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,107,26,0.3)'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,107,26,0.05)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(30,63,102,0.4)'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(8,20,42,0.7)'; }}>
+              <div>
+                <span style={s.demoUser}>{c.user}</span>
+                <span style={s.demoPass}>/ {c.pass}</span>
+              </div>
+              <span style={s.demoRole}>{c.role}</span>
+            </button>
+          ))}
         </div>
 
-        <p className="text-center text-[10px] font-mono mt-6" style={{ color: '#3d5a7a' }}>
-          PhoenixSIEM v4.8.1 — All access is logged and monitored
-        </p>
+        <p style={s.footer}>PhoenixSIEM v4.8.1 — All access is logged and monitored</p>
       </div>
     </div>
   );
