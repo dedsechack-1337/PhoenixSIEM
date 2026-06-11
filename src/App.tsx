@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Events } from './pages/Events';
@@ -17,10 +17,14 @@ import { ExportReports } from './pages/ExportReports';
 import { Login } from './pages/Login';
 import { useAuth } from './context/AuthContext';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function RequireAuth() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 }
 
 export default function App() {
@@ -28,7 +32,7 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        <Route element={<RequireAuth />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
           <Route path="/alerts" element={<Alerts />} />
