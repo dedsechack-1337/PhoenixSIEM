@@ -56,7 +56,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
-  font-size: var(--text-md);
+  font-size: 15px;
   line-height: var(--lh-normal);
   -webkit-text-size-adjust: 100%;
 }
@@ -369,3 +369,18 @@ input::placeholder { color: var(--text-muted); }
 
 /* Heading + caption pairs - consistent gap */
 h1 + p, h2 + p, h3 + p, h4 + p { margin-top: 4px; }
+
+/* ─── BUMPED FONT SIZES ──────────────────────────────────────────────────── */
+.text-xs   { font-size: 12px !important; }
+.text-sm   { font-size: 13.5px !important; }
+.text-base { font-size: 15px !important; }
+.text-lg   { font-size: 18px !important; }
+.text-\[10px\] { font-size: 11.5px !important; }
+.text-\[11px\] { font-size: 12.5px !important; }
+.text-\[9px\]  { font-size: 10.5px !important; }
+
+/* ─── EXTRA BREATHING ROOM ───────────────────────────────────────────────── */
+.card-header-3d { padding: 16px 20px; }
+.card-body { padding: 18px 20px; }
+.table-row-3d { padding: 12px 20px; gap: 14px; }
+.stat-card { padding: 20px; }

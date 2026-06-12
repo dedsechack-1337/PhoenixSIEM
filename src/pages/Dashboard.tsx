@@ -24,7 +24,7 @@ export function Dashboard() {
   const openAlerts = alerts.filter(a => a.status === 'open' || a.status === 'acknowledged').slice(0, 5);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
       {/* AI Banner */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12,
@@ -40,7 +40,7 @@ export function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -51,7 +51,7 @@ export function Dashboard() {
                   <Icon style={{ width: 18, height: 18, color: card.color }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="hdr-number" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</div>
+                  <div className="hdr-number" style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.4 }}>{card.label}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
                     <TrendingUp style={{ width: 11, height: 11, color: '#00ff88' }} />
