@@ -34,7 +34,7 @@ ENVIRONMENT:
 - Total assets: 12 | Online: 11 | Warning: 3
 - 24h event volume: 3,847 events
 - Active IOCs: 12 tracked
-- Platform: PhoenixSIEM v4.8.1 Enterprise
+- Platform: PhoenixSIEM v6.5.7 Enterprise
 `.trim();
 }
 

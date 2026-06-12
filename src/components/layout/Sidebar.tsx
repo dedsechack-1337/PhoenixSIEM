@@ -70,7 +70,7 @@ export function Sidebar() {
               <Zap className="w-2.5 h-2.5" />AI
             </span>
           </div>
-          <div className="text-[10px] font-mono mt-1" style={{ color: '#3d5a7a', lineHeight: 1.4 }}>v4.8.1 — Enterprise</div>
+          <div className="text-[10px] font-mono mt-1" style={{ color: '#3d5a7a', lineHeight: 1.4 }}>v6.5.7 — Enterprise</div>
         </div>
       </div>
 

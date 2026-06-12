@@ -123,7 +123,7 @@ export function TopBar() {
                     <div style={{ fontSize: 11, color: '#3d5a7a', marginTop: 2, lineHeight: 1.4 }}>{item.desc}</div>
                   </div>
                 ))}
-                <div style={{ fontSize: 11, color: '#3d5a7a', textAlign: 'center', marginTop: 4, fontFamily: 'monospace' }}>PhoenixSIEM v4.8.1</div>
+                <div style={{ fontSize: 11, color: '#3d5a7a', textAlign: 'center', marginTop: 4, fontFamily: 'monospace' }}>PhoenixSIEM v6.5.7</div>
               </div>
             </div>
           )}
