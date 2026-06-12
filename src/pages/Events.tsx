@@ -48,7 +48,7 @@ export function Events() {
   }, [query, filterSeverity, filterType]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Ticker */}
       <div className="overflow-hidden rounded-lg border border-[rgba(30,63,102,0.5)] bg-transparent py-2">
         <div className="flex gap-8 animate-none" style={{ whiteSpace: 'nowrap' }}>

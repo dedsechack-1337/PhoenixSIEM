@@ -37,7 +37,7 @@ export function Compliance() {
   const overallPct = Math.round((overallPass / complianceChecks.length) * 100);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Overall Score */}
       <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[rgba(30,63,102,0.5)] bg-transparent">
         <div className="relative w-16 h-16">

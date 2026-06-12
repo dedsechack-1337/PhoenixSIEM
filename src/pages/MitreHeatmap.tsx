@@ -36,7 +36,7 @@ export function MitreHeatmap() {
   const coverageScore = Math.round((coveredTactics / mitreTactics.length) * 100);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[

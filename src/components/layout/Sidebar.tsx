@@ -63,14 +63,14 @@ export function Sidebar() {
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="font-bold text-base tracking-tight" style={{ color: '#f0f6ff' }}>PhoenixSIEM</span>
+            <span className="font-bold text-base tracking-tight" style={{ color: '#f0f6ff', lineHeight: 1.2 }}>PhoenixSIEM</span>
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-wide"
               style={{ background: 'rgba(255,107,26,0.15)', border: '1px solid rgba(255,107,26,0.4)', color: '#ff8c3a',
                 boxShadow: '0 0 8px rgba(255,107,26,0.2)' }}>
               <Zap className="w-2.5 h-2.5" />AI
             </span>
           </div>
-          <div className="text-[10px] font-mono mt-0.5" style={{ color: '#3d5a7a' }}>v4.8.1 — Enterprise</div>
+          <div className="text-[10px] font-mono mt-1" style={{ color: '#3d5a7a', lineHeight: 1.4 }}>v4.8.1 — Enterprise</div>
         </div>
       </div>
 
@@ -83,8 +83,8 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
         {navGroups.map((group) => (
-          <div key={group.label} className="mb-5">
-            <div className="px-5 mb-2">
+          <div key={group.label} className="mb-6">
+            <div className="px-5 mb-2.5">
               <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: '#3d5a7a' }}>{group.label}</span>
             </div>
             <ul className="space-y-0.5 px-3">
@@ -101,7 +101,7 @@ export function Sidebar() {
                     >
                       <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? '' : 'opacity-60 group-hover:opacity-100'}`}
                         style={{ color: isActive ? '#ff8c3a' : undefined }} />
-                      <span className="text-sm font-medium">{label}</span>
+                      <span className="text-sm font-medium" style={{ lineHeight: 1.2 }}>{label}</span>
                       {badge && !isActive && (
                         <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded"
                           style={{ background: 'rgba(255,107,26,0.15)', border: '1px solid rgba(255,107,26,0.4)',
@@ -134,8 +134,8 @@ export function Sidebar() {
               <span className="text-xs font-bold" style={{ color: '#ff8c3a' }}>{user.avatar}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold truncate" style={{ color: '#f0f6ff' }}>{user.username}</div>
-              <div className="text-[10px] truncate" style={{ color: '#3d5a7a' }}>{user.role}</div>
+              <div className="text-xs font-semibold truncate" style={{ color: '#f0f6ff', lineHeight: 1.3 }}>{user.username}</div>
+              <div className="text-[10px] truncate mt-0.5" style={{ color: '#3d5a7a', lineHeight: 1.3 }}>{user.role}</div>
             </div>
             <button onClick={() => { logout(); navigate('/login'); }}
               className="p-1.5 rounded-lg transition-all"

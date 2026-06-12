@@ -33,8 +33,8 @@ export function Dashboard() {
         <Flame style={{ width: 18, height: 18, color: '#ff8c3a', flexShrink: 0,
           filter: 'drop-shadow(0 0 6px rgba(255,107,26,0.6))' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 13, color: '#ffb366', fontWeight: 600 }}>AI Threat Analysis Active — </span>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>PhoenixSIEM AI detected 3 new correlated attack patterns in the last hour. Cobalt Strike C2 campaign targeting Finance workstations with 97% confidence.</span>
+          <span style={{ fontSize: 13, color: '#ffb366', fontWeight: 600, lineHeight: 1.6 }}>AI Threat Analysis Active — </span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>PhoenixSIEM AI detected 3 new correlated attack patterns in the last hour. Cobalt Strike C2 campaign targeting Finance workstations with 97% confidence.</span>
         </div>
         <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,140,58,0.5)', flexShrink: 0 }}>just now</span>
       </div>
@@ -52,7 +52,7 @@ export function Dashboard() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="hdr-number" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{card.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.4 }}>{card.label}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
                     <TrendingUp style={{ width: 11, height: 11, color: '#00ff88' }} />
                     <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#00ff88' }}>{card.change}</span>
@@ -72,8 +72,8 @@ export function Dashboard() {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Event Timeline</h3>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Total vs Critical events — last 24 hours</p>
+                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>Event Timeline</h3>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.5 }}>Total vs Critical events — last 24 hours</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00ff88',
@@ -109,8 +109,8 @@ export function Dashboard() {
         {/* Severity Donut */}
         <Card>
           <CardHeader>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Severity Distribution</h3>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Active alerts by severity</p>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>Severity Distribution</h3>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.5 }}>Active alerts by severity</p>
           </CardHeader>
           <CardBody>
             <ResponsiveContainer width="100%" height={200}>
@@ -133,8 +133,8 @@ export function Dashboard() {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Recent Events</h3>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Latest security events</p>
+                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>Recent Events</h3>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.5 }}>Latest security events</p>
               </div>
               <Activity style={{ width: 15, height: 15, color: 'var(--text-muted)' }} />
             </div>
@@ -143,12 +143,12 @@ export function Dashboard() {
             {recentEvents.map((evt) => (
               <div key={evt.id} className="table-row-3d" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 20px' }}>
                 <SeverityBadge severity={evt.severity} className="flex-shrink-0" />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.description}</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{evt.host}</span>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{evt.description}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)', lineHeight: 1.4 }}>{evt.host}</span>
                     <span style={{ color: 'var(--text-muted)' }}>·</span>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.4 }}>{formatDistanceToNow(evt.timestamp, { addSuffix: true })}</span>
                   </div>
                 </div>
               </div>
@@ -161,8 +161,8 @@ export function Dashboard() {
           <CardHeader>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Active Alerts</h3>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Open & acknowledged</p>
+                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>Active Alerts</h3>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.5 }}>Open & acknowledged</p>
               </div>
               <Bell style={{ width: 15, height: 15, color: 'var(--text-muted)' }} />
             </div>
@@ -171,15 +171,15 @@ export function Dashboard() {
             {openAlerts.map((alert) => (
               <div key={alert.id} className="table-row-3d" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 20px' }}>
                 <SeverityBadge severity={alert.severity} className="flex-shrink-0" />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{alert.title}</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{alert.title}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 10, fontFamily: 'monospace', padding: '1px 6px', borderRadius: 4,
                       background: alert.status === 'open' ? 'rgba(255,32,64,0.12)' : alert.status === 'acknowledged' ? 'rgba(255,215,0,0.12)' : 'rgba(0,180,255,0.12)',
                       color: alert.status === 'open' ? '#ff2040' : alert.status === 'acknowledged' ? '#ffd700' : '#00b4ff',
                       border: `1px solid ${alert.status === 'open' ? 'rgba(255,32,64,0.3)' : alert.status === 'acknowledged' ? 'rgba(255,215,0,0.3)' : 'rgba(0,180,255,0.3)'}`,
                     }}>{alert.status.toUpperCase()}</span>
-                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{alert.mitreId}</span>
+                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)', lineHeight: 1.4 }}>{alert.mitreId}</span>
                   </div>
                 </div>
               </div>

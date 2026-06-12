@@ -124,7 +124,7 @@ export function Assets() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[

@@ -34,17 +34,17 @@ export function TopBar() {
     <header className="topbar-3d fixed top-0 left-64 right-0 z-30 flex items-center justify-between px-6 py-3.5">
       {/* Page title */}
       <div>
-        <h1 className="text-base font-bold tracking-tight" style={{ color: '#f0f6ff' }}>{info.title}</h1>
-        <p className="text-xs mt-0.5" style={{ color: '#3d5a7a' }}>{info.subtitle}</p>
+        <h1 className="text-base font-bold tracking-tight" style={{ color: '#f0f6ff', lineHeight: 1.3 }}>{info.title}</h1>
+        <p className="text-xs mt-1" style={{ color: '#3d5a7a', lineHeight: 1.4 }}>{info.subtitle}</p>
       </div>
 
       <div className="flex items-center gap-4">
         {/* Clock */}
         <div className="hidden md:flex flex-col items-end">
-          <span className="text-xs font-mono font-semibold" style={{ color: '#8ba8c8' }}>
+          <span className="text-xs font-mono font-semibold" style={{ color: '#8ba8c8', lineHeight: 1.3 }}>
             {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} UTC
           </span>
-          <span className="text-[10px] font-mono" style={{ color: '#3d5a7a' }}>
+          <span className="text-[10px] font-mono mt-0.5" style={{ color: '#3d5a7a', lineHeight: 1.3 }}>
             {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         </div>

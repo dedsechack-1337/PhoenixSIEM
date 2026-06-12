@@ -39,7 +39,7 @@ export function LogSearch() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Search Box */}
       <Card>
         <CardBody>

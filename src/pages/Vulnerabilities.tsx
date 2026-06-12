@@ -39,7 +39,7 @@ export function Vulnerabilities() {
   const avgCvss = (vulns.filter((v) => v.status === 'open').reduce((s, v) => s + v.cvss, 0) / (open || 1)).toFixed(1);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
