@@ -148,6 +148,9 @@ export function Sidebar() {
           </div>
         </div>
       )}
+      <div style={{ textAlign: 'center', padding: '8px 0 10px', fontSize: 9.5, color: '#344f6b', fontFamily: 'monospace', opacity: 0.7 }}>
+        Developed by <span style={{ color: '#ff8c3a', fontWeight: 700 }}>Amit Roy</span>
+      </div>
     </aside>
   );
 }

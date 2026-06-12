@@ -222,6 +222,7 @@ export function Login() {
         </div>
 
         <p style={s.footer}>PhoenixSIEM v4.8.1 — All access is logged and monitored</p>
+        <p style={{ ...s.footer, marginTop: 6, opacity: 0.7 }}>Developed by <span style={{ color: '#ff8c3a', fontWeight: 700 }}>Amit Roy</span></p>
       </div>
     </div>
   );
